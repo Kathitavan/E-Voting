@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as faceapi from "face-api.js";
 import axios from "axios";
+import "../styles/accessibleVoting.css";
 
 const API = "http://127.0.0.1:5000";
 
@@ -12,8 +13,8 @@ export default function AccessibleVotingPage({ user }) {
   const cooldownRef = useRef(false);
 
   const candidates = [
-    "Candidate 1","Candidate 2","Candidate 3","Candidate 4","Candidate 5",
-    "Candidate 6","Candidate 7","Candidate 8","Candidate 9","Candidate 10"
+    "DMK","ADMK","NTK","TVK","BJP",
+    "Congress","PMK","AMMK","MNM","DMDK"
   ];
 
   useEffect(() => {
@@ -27,9 +28,7 @@ export default function AccessibleVotingPage({ user }) {
   };
 
   const startVideo = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true
-    });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     videoRef.current.srcObject = stream;
 
     videoRef.current.onloadedmetadata = () => {
@@ -39,16 +38,13 @@ export default function AccessibleVotingPage({ user }) {
 
   const triggerCooldown = () => {
     cooldownRef.current = true;
-    setTimeout(() => cooldownRef.current = false, 800);
+    setTimeout(() => (cooldownRef.current = false), 700);
   };
 
   const trackHead = async () => {
 
     const detection = await faceapi
-      .detectSingleFace(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
-      )
+      .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks();
 
     if (detection) {
@@ -77,8 +73,11 @@ export default function AccessibleVotingPage({ user }) {
             );
             triggerCooldown();
           }
+
         }
+
       }
+
     }
 
     requestAnimationFrame(trackHead);
@@ -92,44 +91,67 @@ export default function AccessibleVotingPage({ user }) {
     });
 
     if (res.data.status === "vote_success") {
-      alert("Vote Cast Successfully ✅");
+      alert("Vote Successfully Cast");
     } else {
       alert("Vote Failed");
     }
+
   };
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <h2>Accessible Head Movement Voting</h2>
 
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        width="400"
-      />
+    <div className="accessible-container">
 
-      <h3>Move head UP/DOWN to change selection</h3>
+      <h1 className="accessible-title">
+        Accessible Head Movement Voting
+      </h1>
 
-      {candidates.map((c, index) => (
-        <div
-          key={index}
-          style={{
-            padding: 12,
-            margin: 6,
-            background: index === selectedIndex ? "green" : "#eee",
-            color: index === selectedIndex ? "white" : "black",
-            fontWeight: "bold"
-          }}
-        >
-          {c}
+      <div className="accessible-main">
+
+        <div className="camera-section">
+
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            className="camera-video"
+          />
+
+          <p className="camera-instruction">
+            Move head ↑ ↓ to select candidate
+          </p>
+
         </div>
-      ))}
 
-      <br />
-      <button onClick={confirmVote}>
+        <div className="candidate-section">
+
+          {candidates.map((c, index) => (
+
+            <div
+              key={index}
+              className={
+                index === selectedIndex
+                  ? "candidate-card active"
+                  : "candidate-card"
+              }
+            >
+              {c}
+            </div>
+
+          ))}
+
+        </div>
+
+      </div>
+
+      <button
+        className="vote-button"
+        onClick={confirmVote}
+      >
         Confirm Vote
       </button>
+
     </div>
+
   );
 }

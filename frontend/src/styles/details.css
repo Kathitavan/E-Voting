@@ -1,0 +1,101 @@
+.details-container{
+min-height:100vh;
+background:linear-gradient(135deg,#020617,#1e293b);
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+color:white;
+text-align:center;
+padding:20px;
+animation:fadeIn 1s ease;
+}
+
+.details-title{
+font-size:34px;
+margin-bottom:30px;
+letter-spacing:1px;
+}
+
+.details-card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(12px);
+padding:30px;
+border-radius:16px;
+width:400px;
+border:1px solid rgba(255,255,255,0.2);
+box-shadow:0 15px 35px rgba(0,0,0,0.5);
+animation:slideUp 0.7s ease;
+}
+
+.card-title{
+margin-bottom:20px;
+}
+
+.info-row{
+display:flex;
+justify-content:space-between;
+padding:12px 0;
+border-bottom:1px solid rgba(255,255,255,0.1);
+font-size:16px;
+}
+
+.details-note{
+margin-top:20px;
+font-size:14px;
+color:#cbd5f5;
+}
+
+.details-buttons{
+margin-top:30px;
+display:flex;
+gap:20px;
+}
+
+.proceed-btn{
+padding:12px 26px;
+background:#22c55e;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+.proceed-btn:hover{
+transform:scale(1.05);
+box-shadow:0 0 12px #22c55e;
+}
+
+.cancel-btn{
+padding:12px 26px;
+background:#ef4444;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+.cancel-btn:hover{
+transform:scale(1.05);
+box-shadow:0 0 12px #ef4444;
+}
+
+/* animations */
+
+@keyframes fadeIn{
+from{opacity:0;}
+to{opacity:1;}
+}
+
+@keyframes slideUp{
+from{
+transform:translateY(40px);
+opacity:0;
+}
+to{
+transform:translateY(0);
+opacity:1;
+}
+}

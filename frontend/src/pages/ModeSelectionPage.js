@@ -1,26 +1,50 @@
+import "../styles/mode.css";
+
 export default function ModeSelectionPage({ setStep }) {
 
   return (
-    <div style={{ textAlign: "center", marginTop: 50 }}>
 
-      <h2>Choose Voting Mode</h2>
+    <div className="mode-container">
 
-      <br />
+      <h1 className="mode-title">
+        Select Voting Method
+      </h1>
 
-      <button
-        style={{ padding: 10, marginRight: 20 }}
-        onClick={() => setStep("voting")}
-      >
-        Normal Voting
-      </button>
+      <p className="mode-subtitle">
+        Choose the method you would like to use for casting your vote.
+      </p>
 
-      <button
-        style={{ padding: 10 }}
-        onClick={() => setStep("accessible")}
-      >
-        Accessible Voting
-      </button>
+      <div className="mode-options">
+
+        <div
+          className="mode-card"
+          onClick={() => setStep("voting")}
+        >
+          <div className="mode-icon">🗳</div>
+
+          <h2>Normal Voting</h2>
+
+          <p>
+            Standard touchscreen voting interface.
+          </p>
+        </div>
+
+        <div
+          className="mode-card accessible"
+          onClick={() => setStep("accessible")}
+        >
+          <div className="mode-icon">♿</div>
+
+          <h2>Accessible Voting</h2>
+
+          <p>
+            Use head movement for hands-free voting.
+          </p>
+        </div>
+
+      </div>
 
     </div>
+
   );
 }

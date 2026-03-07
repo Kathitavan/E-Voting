@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Webcam from "react-webcam";
 import { Html5Qrcode } from "html5-qrcode";
 import axios from "axios";
+import "../styles/register.css";
 
 const API = "http://127.0.0.1:5000";
 
@@ -12,40 +13,40 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
   const [age, setAge] = useState("");
+
   const [qrData, setQrData] = useState("");
   const [qrScanned, setQrScanned] = useState(false);
 
+  const [status, setStatus] = useState("Waiting for QR Scan...");
+
   useEffect(() => {
+
     if (!qrScanned) {
+
       const qr = new Html5Qrcode("qr-reader");
 
       qr.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
+
         async (decodedText) => {
+
           await qr.stop();
+
           setQrData(decodedText);
           setQrScanned(true);
+          setStatus("QR Code Verified");
+
         }
-      ).catch(err => {
-        console.log("QR Start Error:", err);
-      });
+
+      ).catch(err => console.log(err));
     }
+
   }, [qrScanned]);
 
   const register = async () => {
 
-    if (!qrData) {
-      alert("Please scan QR first");
-      return;
-    }
-
-    if (!webcamRef.current) {
-      alert("Camera not ready");
-      return;
-    }
-
-    const image = webcamRef.current.getScreenshot();
+    const image = webcamRef.current?.getScreenshot();
 
     if (!image) {
       alert("Please capture image");
@@ -53,88 +54,132 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await axios.post(
-        `${API}/register`,
-        {
-          name: name,
-          gender: gender,
-          age: age,
-          image: image,
-          qr_data: qrData
-        }
-      );
+
+      const res = await axios.post(`${API}/register`, {
+
+        name,
+        gender,
+        age,
+        image,
+        qr_data: qrData
+
+      });
 
       if (res.data.status === "registered") {
+
+        setStatus("Voter Registered Successfully");
         alert("Registered Successfully");
-      } else if (res.data.status === "already_registered") {
-        alert("QR Already Registered");
-      } else {
-        alert("Registration Failed");
+
       }
 
-    } catch (error) {
-      console.log("Register Error:", error);
+      else if (res.data.status === "already_registered") {
+
+        alert("QR Already Registered");
+
+      }
+
+      else {
+
+        alert("Registration Failed");
+
+      }
+
+    } catch {
+
       alert("Backend Error");
+
     }
+
   };
 
   return (
-    <div style={{ textAlign: "center" }}>
 
-      <h2>Register New Voter</h2>
+    <div className="register-container">
+
+      <h1 className="register-title">
+        Voter Registration Terminal
+      </h1>
+
+      <div className="register-steps">
+
+        <span className={!qrScanned ? "active-step" : "done-step"}>1 QR</span>
+        <span className={qrScanned ? "active-step" : ""}>2 Details</span>
+        <span>3 Face</span>
+
+      </div>
 
       {!qrScanned && (
-        <>
-          <h3>Scan Original Voter ID QR</h3>
-          <div id="qr-reader" style={{ width: 300, margin: "auto" }}></div>
-        </>
+
+        <div className="register-card">
+
+          <h2>Scan Voter QR</h2>
+
+          <div className="qr-scanner">
+
+            <div id="qr-reader"></div>
+            <div className="scanner-frame"></div>
+            <div className="scan-line"></div>
+
+          </div>
+
+          <p className="status-text">{status}</p>
+
+        </div>
+
       )}
 
       {qrScanned && (
-        <>
-          <p><b>QR Scanned Successfully</b></p>
+
+        <div className="register-card">
+
+          <h2>Enter Voter Details</h2>
 
           <input
-            type="text"
-            placeholder="Name"
+            className="register-input"
+            placeholder="Full Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <br /><br />
 
           <input
-            type="text"
+            className="register-input"
             placeholder="Gender"
             value={gender}
             onChange={(e) => setGender(e.target.value)}
           />
-          <br /><br />
 
           <input
+            className="register-input"
             type="number"
             placeholder="Age"
             value={age}
             onChange={(e) => setAge(e.target.value)}
           />
-          <br /><br />
+
+          <h3 className="capture-title">
+            Face Capture
+          </h3>
 
           <Webcam
             ref={webcamRef}
             screenshotFormat="image/jpeg"
             audio={false}
-            videoConstraints={{
-              width: 640,
-              height: 480,
-              facingMode: "user"
-            }}
+            className="register-webcam"
           />
 
-          <br /><br />
+          <button
+            className="register-button"
+            onClick={register}
+          >
+            Register Voter
+          </button>
 
-          <button onClick={register}>Register</button>
-        </>
+        </div>
+
       )}
 
     </div>
+
   );
+
 }
