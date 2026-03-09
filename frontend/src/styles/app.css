@@ -1,0 +1,63 @@
+.app-container{
+
+background:linear-gradient(135deg,#020617,#1e293b);
+min-height:100vh;
+color:white;
+
+}
+
+.navbar{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+padding:16px 40px;
+
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(10px);
+
+border-bottom:1px solid rgba(255,255,255,0.1);
+
+}
+
+.logo{
+
+font-size:22px;
+color:#22c55e;
+
+}
+
+.nav-buttons button{
+
+margin-left:10px;
+
+padding:8px 16px;
+
+border:none;
+
+border-radius:6px;
+
+background:#22c55e;
+
+cursor:pointer;
+
+font-weight:bold;
+
+transition:0.3s;
+
+}
+
+.nav-buttons button:hover{
+
+transform:scale(1.05);
+
+box-shadow:0 0 10px #22c55e;
+
+}
+
+.page-content{
+
+padding-top:20px;
+
+}

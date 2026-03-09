@@ -2,6 +2,7 @@ import Webcam from "react-webcam";
 import axios from "axios";
 import { useRef, useEffect, useState } from "react";
 import "../styles/face.css";
+import SystemLoader from "../components/SystemLoader";
 
 const API = "http://127.0.0.1:5000";
 
@@ -9,10 +10,25 @@ export default function FacePage({ user, setStep }) {
 
   const webcamRef = useRef(null);
 
-  const [status, setStatus] = useState("Scanning Face...");
+  const [status, setStatus] = useState("Initializing Camera...");
   const [verified, setVerified] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // show loader for a short time while camera initializes
+  useEffect(() => {
+
+    const timer = setTimeout(() => {
+      setLoading(false);
+      setStatus("Scanning Face...");
+    }, 1500);
+
+    return () => clearTimeout(timer);
+
+  }, []);
 
   useEffect(() => {
+
+    if (loading) return;
 
     const interval = setInterval(async () => {
 
@@ -36,6 +52,7 @@ export default function FacePage({ user, setStep }) {
           setTimeout(() => {
             setStep("mode");
           }, 1500);
+
         }
 
       } catch (err) {
@@ -46,7 +63,14 @@ export default function FacePage({ user, setStep }) {
 
     return () => clearInterval(interval);
 
-  }, [user, setStep]);
+  }, [loading, user, setStep]);
+
+
+  // loader screen
+  if (loading) {
+    return <SystemLoader message="Initializing biometric scanner..." />;
+  }
+
 
   return (
 

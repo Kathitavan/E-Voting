@@ -1,28 +1,89 @@
 import axios from "axios";
 import { useState } from "react";
 import "../styles/voting.css";
+import SystemLoader from "../components/SystemLoader";
 
 const API = "http://127.0.0.1:5000";
 
-export default function VotingPage({ user }) {
+export default function VotingPage({ user, setStep }) {
 
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const candidates = [
 
-    { name: "Dravida Munnetra Kazhagam", short: "DMK", logo: "/party-logos/dmk.png" },
-    { name: "All India Anna Dravida Munnetra Kazhagam", short: "ADMK", logo: "/party-logos/admk.png" },
-    { name: "Naam Tamilar Katchi", short: "NTK", logo: "/party-logos/ntk.png" },
-    { name: "Tamilaga Vettri Kazhagam", short: "TVK", logo: "/party-logos/tvk.png" },
-    { name: "Bharatiya Janata Party", short: "BJP", logo: "/party-logos/bjp.png" },
-    { name: "Indian National Congress", short: "Congress", logo: "/party-logos/congress.png" },
-    { name: "Pattali Makkal Katchi", short: "PMK", logo: "/party-logos/pmk.png" },
-    { name: "Amma Makkal Munnetra Kazhagam", short: "AMMK", logo: "/party-logos/ammk.png" },
-    { name: "Makkal Needhi Maiam", short: "MNM", logo: "/party-logos/mnm.png" },
-    { name: "Desiya Murpokku Dravida Kazhagam", short: "DMDK", logo: "/party-logos/dmdk.png" }
+    {
+      name: "Dravida Munnetra Kazhagam",
+      tamil: "திராவிட முன்னேற்ற கழகம்",
+      short: "DMK",
+      logo: "/party-logos/dmk.png"
+    },
+
+    {
+      name: "All India Anna Dravida Munnetra Kazhagam",
+      tamil: "அண்ணா திராவிட முன்னேற்ற கழகம்",
+      short: "ADMK",
+      logo: "/party-logos/admk.png"
+    },
+
+    {
+      name: "Naam Tamilar Katchi",
+      tamil: "நாம் தமிழர் கட்சி",
+      short: "NTK",
+      logo: "/party-logos/ntk.png"
+    },
+
+    {
+      name: "Tamilaga Vettri Kazhagam",
+      tamil: "தமிழக வெற்றி கழகம்",
+      short: "TVK",
+      logo: "/party-logos/tvk.png"
+    },
+
+    {
+      name: "Bharatiya Janata Party",
+      tamil: "பாரதிய ஜனதா கட்சி",
+      short: "BJP",
+      logo: "/party-logos/bjp.png"
+    },
+
+    {
+      name: "Indian National Congress",
+      tamil: "இந்திய தேசிய காங்கிரஸ்",
+      short: "INC",
+      logo: "/party-logos/congress.png"
+    },
+
+    {
+      name: "Pattali Makkal Katchi",
+      tamil: "பாட்டாளி மக்கள் கட்சி",
+      short: "PMK",
+      logo: "/party-logos/pmk.png"
+    },
+
+    {
+      name: "Amma Makkal Munnetra Kazhagam",
+      tamil: "அம்மா மக்கள் முன்னேற்ற கழகம்",
+      short: "AMMK",
+      logo: "/party-logos/ammk.png"
+    },
+
+    {
+      name: "Makkal Needhi Maiam",
+      tamil: "மக்கள் நீதி மையம்",
+      short: "MNM",
+      logo: "/party-logos/mnm.png"
+    },
+
+    {
+      name: "Desiya Murpokku Dravida Kazhagam",
+      tamil: "தேசிய முற்போக்கு திராவிட கழகம்",
+      short: "DMDK",
+      logo: "/party-logos/dmdk.png"
+    }
 
   ];
+
 
   const confirmVote = async () => {
 
@@ -32,7 +93,7 @@ export default function VotingPage({ user }) {
     }
 
     const confirm = window.confirm(
-      `Confirm your vote for ${selected.short}?`
+      `Confirm your vote for ${selected.name}?`
     );
 
     if (!confirm) return;
@@ -50,13 +111,14 @@ export default function VotingPage({ user }) {
 
       if (res.data.status === "vote_success") {
 
-        alert("🗳 Vote Cast Successfully");
+        setStep("success");
 
       }
 
       else if (res.data.status === "already_voted") {
 
-        alert("You already voted");
+        alert("You have already voted");
+        setStep("qr");
 
       }
 
@@ -76,6 +138,14 @@ export default function VotingPage({ user }) {
     }
 
   };
+
+
+  /* LOADER SCREEN */
+
+  if (loading) {
+    return <SystemLoader message="Recording vote securely..." />;
+  }
+
 
   return (
 
@@ -111,7 +181,17 @@ export default function VotingPage({ user }) {
 
               <p>{c.name}</p>
 
+              <span className="tamil-name">
+                {c.tamil}
+              </span>
+
             </div>
+
+            {selected?.short === c.short && (
+              <div className="vote-indicator">
+                ✓
+              </div>
+            )}
 
           </div>
 
@@ -122,14 +202,12 @@ export default function VotingPage({ user }) {
       <button
         className="vote-button"
         onClick={confirmVote}
-        disabled={loading}
       >
-
-        {loading ? "Processing Vote..." : "Confirm Vote"}
-
+        Confirm Vote
       </button>
 
     </div>
 
   );
+
 }
