@@ -236,6 +236,47 @@ def vote():
         return jsonify({"status": "server_error"}), 500
 
 # ==========================
+# ADMIN DASHBOARD ANALYTICS
+# ==========================
+
+@app.route("/admin/results")
+def admin_results():
+
+    database = load_json("voter_database.json")
+    voted = load_json("voted_status.json")
+
+    votes = {}
+    gender_stats = {
+        "male": 0,
+        "female": 0
+    }
+
+    # Count votes
+    for qr, candidate in voted.items():
+
+        votes[candidate] = votes.get(candidate, 0) + 1
+
+        if qr in database:
+
+            gender = database[qr]["gender"].lower()
+
+            if gender == "male":
+                gender_stats["male"] += 1
+            elif gender == "female":
+                gender_stats["female"] += 1
+
+    system = {
+        "registered": len(database),
+        "voted": len(voted)
+    }
+
+    return jsonify({
+        "votes": votes,
+        "gender_stats": gender_stats,
+        "system": system
+    })
+
+# ==========================
 # START SERVER
 # ==========================
 
