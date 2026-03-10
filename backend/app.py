@@ -3,17 +3,19 @@ from flask_cors import CORS
 import json, os, base64, hashlib, threading, urllib.request
 import numpy as np
 import cv2
-import face_recognition
 import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision as mp_vision
+
+# InsightFace (replaces dlib + face_recognition — no cmake needed)
+import insightface
+from insightface.app import FaceAnalysis
 
 app = Flask(__name__)
 CORS(app)
 
 # ══════════════════════════════════════════════════════════════════════
 #  IN-MEMORY JSON CACHE
-#  Avoids repeated disk reads — only re-reads file if mtime changed.
 # ══════════════════════════════════════════════════════════════════════
 
 _cache: dict = {}
@@ -45,17 +47,61 @@ def save_json(file: str, data: dict) -> None:
 
 # ══════════════════════════════════════════════════════════════════════
 #  QR KEY NORMALISATION
-#  Whatever the QR contains (URL, raw bytes, plain text) →
-#  stable 64-char SHA-256 hex used as the voter DB key.
-#  Fixes: "http://robslink.com/..." being stored literally as a key.
 # ══════════════════════════════════════════════════════════════════════
 
 def make_voter_id(qr_raw: str) -> str:
-    """Always returns a 64-char hex SHA-256 — canonical voter DB key."""
+    """Always returns a 64-char SHA-256 hex — canonical voter DB key."""
     return hashlib.sha256(qr_raw.strip().encode("utf-8")).hexdigest()
 
 # ══════════════════════════════════════════════════════════════════════
-#  MEDIAPIPE  –  FaceLandmarker singleton (pre-warmed at startup)
+#  INSIGHTFACE  —  singleton face analyser (pre-warmed at startup)
+#  Handles: face detection + 512-d embedding in one call.
+#  No dlib, no cmake — pure ONNX pre-built wheels.
+# ══════════════════════════════════════════════════════════════════════
+
+_face_app  = None
+_face_lock = threading.Lock()
+
+def get_face_app() -> FaceAnalysis:
+    global _face_app
+    with _face_lock:
+        if _face_app is None:
+            print("[startup] Loading InsightFace model …")
+            fa = FaceAnalysis(
+                name="buffalo_sc",          # small, fast, CPU-friendly model
+                providers=["CPUExecutionProvider"],
+            )
+            fa.prepare(ctx_id=0, det_size=(320, 320))
+            _face_app = fa
+            print("[startup] InsightFace ready.")
+    return _face_app
+
+# Pre-warm in background
+threading.Thread(target=get_face_app, daemon=True).start()
+
+def get_face_embedding(img_bgr: np.ndarray):
+    """
+    Returns the 512-d face embedding (numpy array) or None if no face found.
+    img_bgr: OpenCV BGR image.
+    """
+    fa     = get_face_app()
+    faces  = fa.get(img_bgr)
+    if not faces:
+        return None
+    # Use the largest detected face
+    face = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0]) * (f.bbox[3]-f.bbox[1]))
+    return face.embedding  # shape (512,), float32
+
+def embedding_similarity(e1: np.ndarray, e2: np.ndarray) -> float:
+    """Cosine similarity in [0, 1]. Higher = more similar."""
+    n1 = np.linalg.norm(e1)
+    n2 = np.linalg.norm(e2)
+    if n1 == 0 or n2 == 0:
+        return 0.0
+    return float(np.dot(e1, e2) / (n1 * n2))
+
+# ══════════════════════════════════════════════════════════════════════
+#  MEDIAPIPE  —  FaceLandmarker singleton (gesture / blink / head-pose)
 # ══════════════════════════════════════════════════════════════════════
 
 MODEL_PATH = "face_landmarker.task"
@@ -95,7 +141,6 @@ def get_landmarker():
             print("[startup] FaceLandmarker ready.")
     return _landmarker
 
-# Pre-warm in background — eliminates cold-start latency on first call
 threading.Thread(target=get_landmarker, daemon=True).start()
 
 # ══════════════════════════════════════════════════════════════════════
@@ -114,7 +159,7 @@ def eye_aspect_ratio(landmarks, eye_indices: list, w: int, h: int) -> float:
         lm = landmarks[i]
         return np.array([lm.x * w, lm.y * h])
     p1, p2, p3, p4, p5, p6 = [pt(i) for i in eye_indices]
-    return (np.linalg.norm(p2 - p6) + np.linalg.norm(p3 - p5)) / (2.0 * np.linalg.norm(p1 - p4))
+    return (np.linalg.norm(p2-p6) + np.linalg.norm(p3-p5)) / (2.0 * np.linalg.norm(p1-p4))
 
 def head_pitch(landmarks, h: int) -> str:
     nose_y     = landmarks[NOSE_TIP].y * h
@@ -129,45 +174,41 @@ def head_pitch(landmarks, h: int) -> str:
     return "neutral"
 
 # ══════════════════════════════════════════════════════════════════════
-#  PASSIVE LIVENESS DETECTION  (anti-spoofing, no extra model needed)
-#
-#  Four independent checks on the face ROI — all must pass.
-#  Detects:
-#    • Printed photos held up to camera  (flat texture, hard edges)
-#    • Phone / screen replay attacks     (screen glare, uniform colour)
-#    • Static image files sent directly  (zero texture variance)
+#  PASSIVE LIVENESS DETECTION  (no extra model — CV-based checks)
 # ══════════════════════════════════════════════════════════════════════
 
 def check_liveness(img_bgr: np.ndarray) -> tuple:
     """Returns (is_live: bool, reason: str)."""
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
-    rgb  = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-    locs = face_recognition.face_locations(rgb, model="hog")
-    if not locs:
+    # Use insightface to locate the face ROI
+    fa    = get_face_app()
+    faces = fa.get(img_bgr)
+    if not faces:
         return False, "no_face"
 
-    top, right, bottom, left = locs[0]
-    pad    = 10
-    top    = max(0, top - pad)
-    left   = max(0, left - pad)
-    bottom = min(h, bottom + pad)
-    right  = min(w, right + pad)
+    face  = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0]) * (f.bbox[3]-f.bbox[1]))
+    x1, y1, x2, y2 = [int(v) for v in face.bbox]
+    pad   = 10
+    x1    = max(0, x1 - pad)
+    y1    = max(0, y1 - pad)
+    x2    = min(w, x2 + pad)
+    y2    = min(h, y2 + pad)
 
-    face_gray = gray[top:bottom, left:right]
-    face_bgr  = img_bgr[top:bottom, left:right]
+    face_gray = gray[y1:y2, x1:x2]
+    face_bgr  = img_bgr[y1:y2, x1:x2]
 
     if face_gray.size == 0:
         return False, "bad_roi"
 
-    # Check 1: Texture — real faces have micro-texture, photos/screens don't
+    # Check 1: Texture
     lap_var = cv2.Laplacian(face_gray, cv2.CV_64F).var()
     if lap_var < 55.0:
         print(f"[liveness] FAIL texture  lap_var={lap_var:.1f}")
         return False, "spoof_flat_texture"
 
-    # Check 2: Colour naturalness — screens/B&W photos have abnormal saturation
+    # Check 2: Colour naturalness
     hsv    = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2HSV)
     s_ch   = hsv[:, :, 1].astype(np.float32)
     s_std  = float(np.std(s_ch))
@@ -179,14 +220,14 @@ def check_liveness(img_bgr: np.ndarray) -> tuple:
         print(f"[liveness] FAIL oversaturated  s_mean={s_mean:.1f}")
         return False, "spoof_oversaturated"
 
-    # Check 3: Screen glare — lit screens produce large near-white regions
+    # Check 3: Screen glare
     _, bright_mask = cv2.threshold(face_gray, 240, 255, cv2.THRESH_BINARY)
     bright_ratio   = bright_mask.sum() / 255 / face_gray.size
     if bright_ratio > 0.25:
         print(f"[liveness] FAIL screen glare  bright_ratio={bright_ratio:.3f}")
         return False, "spoof_screen_glare"
 
-    # Check 4: Edge sharpness — printed paper has unnaturally hard uniform edges
+    # Check 4: Edge sharpness
     sobelx   = cv2.Sobel(face_gray, cv2.CV_64F, 1, 0, ksize=3)
     sobely   = cv2.Sobel(face_gray, cv2.CV_64F, 0, 1, ksize=3)
     grad_mag = np.sqrt(sobelx**2 + sobely**2)
@@ -253,7 +294,6 @@ def get_mode():
 
 @app.route("/set-mode", methods=["POST"])
 def set_mode():
-    # FIX: use get_json(silent=True) — request.json crashes if Content-Type is wrong
     data = request.get_json(silent=True) or {}
     mode = data.get("mode", "TEST")
     save_mode(mode)
@@ -268,7 +308,7 @@ def home():
     return "E-Voting Backend Running"
 
 # ══════════════════════════════════════════════════════════════════════
-#  REGISTER  — QR key normalised + liveness gate
+#  REGISTER
 # ══════════════════════════════════════════════════════════════════════
 
 @app.route("/register", methods=["POST"])
@@ -280,7 +320,7 @@ def register():
         return jsonify({"status": "invalid_request"}), 400
 
     qr_raw    = data["qr_data"].strip()
-    voter_id  = make_voter_id(qr_raw)      # SHA-256 of raw QR — always clean key
+    voter_id  = make_voter_id(qr_raw)
     face_hash = voter_id[:12]
 
     database = load_json("voter_database.json")
@@ -292,7 +332,7 @@ def register():
     except Exception as e:
         return jsonify({"status": "bad_image", "detail": str(e)}), 400
 
-    # Liveness gate — blocks photo/screen spoofing at registration too
+    # Liveness gate
     is_live, reason = check_liveness(img)
     if not is_live:
         return jsonify({
@@ -302,28 +342,25 @@ def register():
         }), 400
 
     img_pp    = preprocess_for_face(img)
-    rgb       = cv2.cvtColor(img_pp, cv2.COLOR_BGR2RGB)
-    locations = face_recognition.face_locations(rgb, model="hog")
-    if not locations:
+    embedding = get_face_embedding(img_pp)
+    if embedding is None:
         return jsonify({"status": "no_face_detected"}), 400
 
-    encodings = face_recognition.face_encodings(
-        rgb, known_face_locations=locations, num_jitters=3
-    )
-    if not encodings:
-        return jsonify({"status": "encoding_failed"}), 400
+    face_file   = face_hash + ".jpg"
+    embed_file  = face_hash + ".npy"
 
-    face_file = face_hash + ".jpg"
     database[voter_id] = {
-        "name":      data["name"].strip(),
-        "gender":    data["gender"].strip().lower(),
-        "age":       str(data["age"]).strip(),
-        "face_file": face_file,
-        "qr_type":   "url" if qr_raw.startswith(("http://", "https://")) else "raw",
+        "name":       data["name"].strip(),
+        "gender":     data["gender"].strip().lower(),
+        "age":        str(data["age"]).strip(),
+        "face_file":  face_file,
+        "embed_file": embed_file,
+        "qr_type":    "url" if qr_raw.startswith(("http://", "https://")) else "raw",
     }
     save_json("voter_database.json", database)
     os.makedirs("voters", exist_ok=True)
     cv2.imwrite(f"voters/{face_file}", img)
+    np.save(f"voters/{embed_file}", embedding)   # save embedding for fast lookup
 
     print(f"[register] OK  voter_id={voter_id[:12]}…  name={data['name'].strip()}")
     return jsonify({"status": "registered", "voter_id": voter_id[:8] + "…"})
@@ -343,7 +380,7 @@ def verify_qr():
         return jsonify({"status": "invalid_request", "reason": "qr_data missing or not a string"}), 400
 
     qr_raw   = raw.strip()
-    voter_id = make_voter_id(qr_raw)      # same function → same key as register
+    voter_id = make_voter_id(qr_raw)
 
     database = load_json("voter_database.json")
     voter    = database.get(voter_id)
@@ -361,31 +398,29 @@ def verify_qr():
     print(f"[verify-qr] OK  voter_id={voter_id[:12]}…  name={voter['name']}")
     return jsonify({
         "status":     "success",
-        "qr_string":  voter_id,           # pass voter_id downstream, NOT raw QR
+        "qr_string":  voter_id,
         "voter_info": voter,
     })
 
 # ══════════════════════════════════════════════════════════════════════
-#  VERIFY FACE  — liveness check BEFORE recognition
+#  VERIFY FACE
 # ══════════════════════════════════════════════════════════════════════
 
-_face_encoding_cache: dict = {}
-_fec_lock = threading.Lock()
+_embed_cache: dict = {}
+_embed_lock  = threading.Lock()
 
-def get_stored_encoding(face_file: str):
-    with _fec_lock:
-        if face_file in _face_encoding_cache:
-            return _face_encoding_cache[face_file]
-    path = f"voters/{face_file}"
+def get_stored_embedding(embed_file: str):
+    """Load saved .npy embedding with in-memory cache."""
+    with _embed_lock:
+        if embed_file in _embed_cache:
+            return _embed_cache[embed_file]
+    path = f"voters/{embed_file}"
     if not os.path.exists(path):
         return None
-    img  = face_recognition.load_image_file(path)
-    locs = face_recognition.face_locations(img, model="hog")
-    encs = face_recognition.face_encodings(img, known_face_locations=locs, num_jitters=3)
-    enc  = encs[0] if encs else None
-    with _fec_lock:
-        _face_encoding_cache[face_file] = enc
-    return enc
+    emb = np.load(path)
+    with _embed_lock:
+        _embed_cache[embed_file] = emb
+    return emb
 
 @app.route("/verify-face", methods=["POST"])
 def verify_face():
@@ -405,7 +440,7 @@ def verify_face():
     except Exception as e:
         return jsonify({"status": "bad_image", "detail": str(e)}), 400
 
-    # Liveness gate — reject photos/screens before any recognition
+    # Liveness gate — reject photos/screens before recognition
     is_live, reason = check_liveness(img_live)
     if not is_live:
         print(f"[verify-face] LIVENESS FAIL  voter_id={voter_id[:12]}…  reason={reason}")
@@ -415,27 +450,23 @@ def verify_face():
             "message": liveness_message(reason),
         }), 200
 
-    face_file  = database[voter_id]["face_file"]
-    enc_stored = get_stored_encoding(face_file)
+    # Load stored embedding
+    voter      = database[voter_id]
+    embed_file = voter.get("embed_file", voter.get("face_file", "").replace(".jpg", ".npy"))
+    enc_stored = get_stored_embedding(embed_file)
     if enc_stored is None:
         return jsonify({"status": "no_stored_face"})
 
+    # Get live embedding
     img_pp   = preprocess_for_face(img_live)
-    rgb_live = cv2.cvtColor(img_pp, cv2.COLOR_BGR2RGB)
-    locs     = face_recognition.face_locations(rgb_live, model="hog")
-    if not locs:
+    enc_live = get_face_embedding(img_pp)
+    if enc_live is None:
         return jsonify({"status": "no_live_face"})
 
-    enc_live = face_recognition.face_encodings(
-        rgb_live, known_face_locations=locs, num_jitters=2
-    )
-    if not enc_live:
-        return jsonify({"status": "no_live_face"})
-
-    distance   = face_recognition.face_distance([enc_stored], enc_live[0])[0]
-    match      = bool(distance < 0.45)
-    confidence = round(float(1.0 - distance), 4)
-    print(f"[verify-face] voter_id={voter_id[:12]}…  distance={distance:.4f}  match={match}")
+    similarity = embedding_similarity(enc_stored, enc_live)
+    match      = similarity >= 0.40          # cosine threshold (0.40 = good balance)
+    confidence = round(similarity, 4)
+    print(f"[verify-face] voter_id={voter_id[:12]}…  similarity={similarity:.4f}  match={match}")
 
     return jsonify({
         "status":     "verified" if match else "failed",
@@ -567,6 +598,7 @@ def health():
         "registered": len(load_json("voter_database.json")),
         "voted":      len(load_json("voted_status.json")),
         "landmarker": _landmarker is not None,
+        "face_app":   _face_app is not None,
     })
 
 # ══════════════════════════════════════════════════════════════════════
