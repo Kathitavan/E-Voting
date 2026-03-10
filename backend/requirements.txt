@@ -1,11 +1,7 @@
 # ══════════════════════════════════════════════════════════════════
 #  Secure E-Voting System — Backend Dependencies
-#  Platform: Render.com (Python 3.10 — NOT 3.14)
-#  Install:  pip install -r requirements.txt
-#
-#  ⚠️  IMPORTANT: Set Python version to 3.10.x in Render dashboard
-#     Settings → Environment → Python Version → 3.10.13
-#     face-recognition / dlib do NOT support Python 3.14
+#  Python: 3.11.x  (mediapipe + dlib + face-recognition all support 3.11)
+#  Platform: Render.com
 # ══════════════════════════════════════════════════════════════════
 
 # ── Web Framework ──────────────────────────────────────────────────
@@ -17,21 +13,20 @@ Werkzeug==3.0.3
 # ── Numerical ──────────────────────────────────────────────────────
 numpy==1.26.4
 
-# ── Computer Vision (headless = no GUI, correct for servers) ───────
+# ── Computer Vision ────────────────────────────────────────────────
 opencv-python-headless==4.10.0.84
 
-# ── dlib (C++ backbone — must install BEFORE face-recognition) ─────
-# Render provides cmake via the render.yaml build command below
+# ── dlib (must be before face-recognition) ─────────────────────────
 dlib==19.24.6
 
 # ── Face Recognition ───────────────────────────────────────────────
 face-recognition==1.3.0
 face-recognition-models==0.3.0
 
-# ── MediaPipe ──────────────────────────────────────────────────────
-mediapipe==0.10.14
+# ── MediaPipe (0.10.32 = latest, supports Python 3.11) ────────────
+mediapipe==0.10.32
 
-# ── Pinned transitive deps (prevent resolver version conflicts) ────
+# ── Pinned transitive deps ─────────────────────────────────────────
 click==8.1.7
 itsdangerous==2.2.0
 Jinja2==3.1.4
