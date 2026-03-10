@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const API          = "http://127.0.0.1:5000";
+const API          = "https://e-voting-backend-zmxj.onrender.com";
 const POLL_MS      = 100;
 const BLINK_HOLD_S = 1.0;
 const NAV_COOLDOWN = 650;

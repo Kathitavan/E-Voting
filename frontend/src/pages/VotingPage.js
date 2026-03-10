@@ -3,7 +3,7 @@ import { useState } from "react";
 import "../styles/voting.css";
 import SystemLoader from "../components/SystemLoader";
 
-const API = "http://127.0.0.1:5000";
+const API = "https://e-voting-backend-zmxj.onrender.com";
 
 const candidates = [
   { name: "Dravida Munnetra Kazhagam",                tamil: "திராவிட முன்னேற்ற கழகம்",        short: "DMK",  logo: "/party-logos/dmk.png"      },

@@ -19,7 +19,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import SystemLoader from "../components/SystemLoader";
 import "../styles/accessibleVoting.css";
 
-const API             = "http://127.0.0.1:5000";
+const API             = "https://e-voting-backend-zmxj.onrender.com";
 const POLL_MS         = 80;      // ~12.5 fps
 const BLINK_HOLD_MS   = 1000;    // 1s hold blink → trigger confirm
 const NAV_COOLDOWN_MS = 700;     // ms between nav steps

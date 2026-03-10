@@ -4,7 +4,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import axios from "axios";
 import "../styles/register.css";
 
-const API = "http://127.0.0.1:5000";
+const API = "https://e-voting-backend-zmxj.onrender.com";
 
 export default function RegisterPage() {
   const webcamRef = useRef(null);

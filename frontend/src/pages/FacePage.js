@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import "../styles/face.css";
 import SystemLoader from "../components/SystemLoader";
 
-const API = "http://127.0.0.1:5000";
+const API = "https://e-voting-backend-zmxj.onrender.com";
 
 const STATES = {
   init:     { label: "Initializing scanner…",       color: "init"    },

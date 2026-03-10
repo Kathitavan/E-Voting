@@ -15,7 +15,7 @@ import {
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-const API = "http://127.0.0.1:5000"
+const API = "https://e-voting-backend-zmxj.onrender.com"
 
 const PARTY_COLORS = [
   "#FF9933", "#138808", "#000080", "#f87171",
