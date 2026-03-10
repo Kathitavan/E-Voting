@@ -3,8 +3,11 @@ services:
     name: evoting-backend
     runtime: python
     region: singapore
-
     rootDir: backend
+
+    # ── Force Python 3.11 — dlib + face-recognition + mediapipe all support it
+    # Python 3.14 has NO wheels for these packages
+    pythonVersion: "3.11.9"
 
     buildCommand: >-
       apt-get update -qq &&
@@ -16,7 +19,7 @@ services:
 
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: "3.11.9"
       - key: FLASK_ENV
         value: production
       - key: PYTHONUNBUFFERED
