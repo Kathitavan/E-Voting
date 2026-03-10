@@ -3,67 +3,127 @@
 
 <head>
 
-<meta charset="utf-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <!-- ══ Primary Meta ══════════════════════════════════════════════ -->
+  <title>Secure E-Voting System</title>
+  <meta name="description"    content="Secure Biometric E-Voting System using QR Authentication and Face Recognition" />
+  <meta name="keywords"       content="e-voting, biometric, QR authentication, face recognition, secure voting, online election" />
+  <meta name="author"         content="Secure E-Voting System" />
+  <meta name="theme-color"    content="#020617" />
+  <meta name="color-scheme"   content="dark" />
+  <meta name="robots"         content="noindex, nofollow" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- ══ Favicon / App Icons ══════════════════════════════════════ -->
+  <link rel="icon"             type="image/png" href="%PUBLIC_URL%/online-voting.png" />
+  <link rel="apple-touch-icon"                  href="%PUBLIC_URL%/online-voting.png" />
+  <link rel="shortcut icon"    type="image/png" href="%PUBLIC_URL%/online-voting.png" />
 
-<meta name="theme-color" content="#020617" />
+  <!-- ══ Web App Manifest ════════════════════════════════════════ -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-<meta
-name="description"
-content="Secure Biometric E-Voting System using QR Authentication and Face Recognition"
-/>
+  <!-- ══ Open Graph (social sharing preview) ══════════════════════ -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="Secure E-Voting System" />
+  <meta property="og:description" content="Secure Biometric E-Voting System using QR Authentication and Face Recognition" />
+  <meta property="og:image"       content="%PUBLIC_URL%/online-voting.png" />
+  <meta property="og:image:alt"   content="Secure E-Voting System Logo" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height"content="512" />
+  <meta property="og:locale"      content="en_US" />
 
-<title>Secure E-Voting System</title>
+  <!-- ══ Twitter Card ════════════════════════════════════════════ -->
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Secure E-Voting System" />
+  <meta name="twitter:description" content="Secure Biometric E-Voting System using QR Authentication and Face Recognition" />
+  <meta name="twitter:image"       content="%PUBLIC_URL%/online-voting.png" />
 
-<link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <!-- ══ PWA / Mobile ════════════════════════════════════════════ -->
+  <meta name="mobile-web-app-capable"       content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title"   content="E-Voting" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="application-name"             content="Secure E-Voting" />
+  <meta name="msapplication-TileColor"      content="#020617" />
+  <meta name="msapplication-TileImage"      content="%PUBLIC_URL%/online-voting.png" />
+  <meta name="msapplication-config"         content="none" />
 
-<link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <!-- ══ Security Headers ════════════════════════════════════════ -->
+  <meta http-equiv="X-UA-Compatible"   content="IE=edge" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 
-<!-- Google Font -->
+  <!-- ══ Google Font ═════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
-<link
-href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-rel="stylesheet"
-/>
+  <style>
 
-<style>
+    *,
+    *::before,
+    *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body{
-margin:0;
-font-family:"Inter",sans-serif;
-background:#020617;
-color:white;
-}
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #020617;
+      color: white;
+      -webkit-font-smoothing: antialiased;
+    }
 
-#loading-screen{
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-font-size:22px;
-color:#22c55e;
-}
+    /* Loading screen shown before React mounts */
+    #loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      height: 100vh;
+      background: linear-gradient(135deg, #020617, #0f172a, #1e293b);
+    }
 
-</style>
+    #loading-screen img {
+      width: 64px;
+      height: 64px;
+      opacity: 0.9;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    #loading-screen p {
+      font-size: 16px;
+      font-weight: 500;
+      color: #22c55e;
+      letter-spacing: 0.06em;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.45; }
+    }
+
+  </style>
 
 </head>
 
 <body>
 
-<noscript>
-You need to enable JavaScript to run this app.
-</noscript>
+  <noscript>
+    You need to enable JavaScript to run this app.
+  </noscript>
 
-<div id="root">
+  <div id="root">
 
-<div id="loading-screen">
-Initializing Secure E-Voting Terminal...
-</div>
+    <!-- Shown only until React hydrates -->
+    <div id="loading-screen">
+      <img src="%PUBLIC_URL%/online-voting.png" alt="E-Voting Logo" />
+      <p>Initializing Secure E-Voting Terminal…</p>
+    </div>
 
-</div>
+  </div>
 
 </body>
 
