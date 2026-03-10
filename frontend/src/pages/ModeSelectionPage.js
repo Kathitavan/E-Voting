@@ -1,50 +1,87 @@
 import "../styles/mode.css";
 
 export default function ModeSelectionPage({ setStep }) {
-
   return (
+    <div className="ms-root">
 
-    <div className="mode-container">
+      {/* Tricolor stripe */}
+      <div className="ms-stripe">
+        <div className="ms-stripe-s" />
+        <div className="ms-stripe-w" />
+        <div className="ms-stripe-g" />
+      </div>
 
-      <h1 className="mode-title">
-        Select Voting Method
-      </h1>
+      {/* Glows */}
+      <div className="ms-glow ms-glow--s" />
+      <div className="ms-glow ms-glow--b" />
+      <div className="ms-glow ms-glow--g" />
 
-      <p className="mode-subtitle">
-        Choose the method you would like to use for casting your vote.
-      </p>
+      <div className="ms-wrap">
 
-      <div className="mode-options">
-
-        <div
-          className="mode-card"
-          onClick={() => setStep("voting")}
-        >
-          <div className="mode-icon">🗳</div>
-
-          <h2>Normal Voting</h2>
-
-          <p>
-            Standard touchscreen voting interface.
+        {/* Header */}
+        <div className="ms-header">
+          <div className="ms-emblem">🇮🇳</div>
+          <h1 className="ms-title">Select Voting Method</h1>
+          <p className="ms-subtitle">
+            Choose how you would like to cast your vote today.
           </p>
         </div>
 
-        <div
-          className="mode-card accessible"
-          onClick={() => setStep("accessible")}
-        >
-          <div className="mode-icon">♿</div>
+        {/* Cards */}
+        <div className="ms-cards">
 
-          <h2>Accessible Voting</h2>
+          {/* Normal voting */}
+          <button className="ms-card ms-card--normal" onClick={() => setStep("voting")}>
+            <div className="ms-card-glow" />
+            <div className="ms-card-icon">🗳️</div>
+            <div className="ms-card-body">
+              <h2 className="ms-card-title">Normal Voting</h2>
+              <p className="ms-card-desc">
+                Standard touchscreen interface. Tap to select your party and confirm your vote.
+              </p>
+            </div>
+            <div className="ms-card-footer">
+              <span className="ms-card-tag ms-card-tag--green">
+                <span className="ms-tag-dot" /> Touchscreen
+              </span>
+              <span className="ms-card-arrow">→</span>
+            </div>
+          </button>
 
-          <p>
-            Use head movement for hands-free voting.
-          </p>
+          {/* Accessible voting */}
+          <button className="ms-card ms-card--accessible" onClick={() => setStep("accessible")}>
+            <div className="ms-card-glow ms-card-glow--blue" />
+            <div className="ms-card-icon">♿</div>
+            <div className="ms-card-body">
+              <h2 className="ms-card-title">Accessible Voting</h2>
+              <p className="ms-card-desc">
+                Hands-free voting using head tilt gestures and eye blink detection via webcam.
+              </p>
+            </div>
+            <div className="ms-card-footer">
+              <span className="ms-card-tag ms-card-tag--blue">
+                <span className="ms-tag-dot" /> Gesture Control
+              </span>
+              <span className="ms-card-arrow">→</span>
+            </div>
+          </button>
+
         </div>
+
+        {/* Footer note */}
+        <p className="ms-note">
+          🔒 Your vote is encrypted and anonymous. Both methods are equally secure.
+        </p>
 
       </div>
 
-    </div>
+      {/* Bottom stripe */}
+      <div className="ms-stripe ms-stripe--bottom">
+        <div className="ms-stripe-s" />
+        <div className="ms-stripe-w" />
+        <div className="ms-stripe-g" />
+      </div>
 
+    </div>
   );
 }

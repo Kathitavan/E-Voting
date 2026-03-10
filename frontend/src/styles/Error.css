@@ -1,0 +1,216 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --saffron:      #FF9933;
+  --saffron-dim:  rgba(255,153,51,0.1);
+  --green:        #138808;
+  --green-bright: #22c55e;
+  --bg:           #060a0f;
+  --bg-card:      #0d1520;
+  --border:       rgba(255,255,255,0.07);
+  --text:         #f1f5f9;
+  --text-2:       rgba(241,245,249,0.55);
+  --text-3:       rgba(241,245,249,0.28);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Root ── */
+.ep-root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 20px;
+  position: relative; overflow: hidden;
+}
+
+/* ── Stripes ── */
+.ep-stripe {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; height: 4px; z-index: 10;
+}
+.ep-stripe--btm { top: auto; bottom: 0; opacity: 0.4; }
+.ep-s { flex: 1; background: var(--saffron); }
+.ep-w { flex: 1; background: rgba(255,255,255,0.85); }
+.ep-g { flex: 1; background: var(--green); }
+
+/* ── Ambient glow ── */
+.ep-glow {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(ellipse, var(--accent-glow, rgba(255,153,51,0.1)) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+  animation: epGlowPulse 3s ease-in-out infinite;
+}
+@keyframes epGlowPulse {
+  0%,100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1);   }
+  50%      { opacity: 1;   transform: translate(-50%,-50%) scale(1.08); }
+}
+
+/* ── Dot grid ── */
+.ep-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+
+/* ── Wrap ── */
+.ep-wrap {
+  position: relative; z-index: 1;
+  max-width: 520px; width: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 22px; text-align: center;
+  animation: epFadeUp .5s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes epFadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Big error code ── */
+.ep-code-wrap {
+  position: relative;
+  height: 100px; display: flex; align-items: center; justify-content: center;
+  user-select: none;
+}
+/* Ghost / background layer */
+.ep-code-bg {
+  position: absolute;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(90px, 20vw, 130px); font-weight: 800;
+  letter-spacing: -4px; line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.04);
+  animation: epCodeDrift 6s ease-in-out infinite;
+}
+@keyframes epCodeDrift {
+  0%,100% { transform: translateY(0);  }
+  50%      { transform: translateY(-6px); }
+}
+/* Foreground layer — accent colored */
+.ep-code-fg {
+  position: relative;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(72px, 16vw, 110px); font-weight: 800;
+  letter-spacing: -3px; line-height: 1;
+  background: linear-gradient(135deg, var(--accent, #FF9933) 0%, rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 28px var(--accent-glow, rgba(255,153,51,0.5)));
+  animation: epCodeGlow 2s ease-in-out infinite;
+}
+@keyframes epCodeGlow {
+  0%,100% { filter: drop-shadow(0 0 20px var(--accent-glow)); }
+  50%      { filter: drop-shadow(0 0 42px var(--accent-glow)); }
+}
+
+/* ── Icon ── */
+.ep-icon {
+  font-size: 52px; line-height: 1;
+  filter: drop-shadow(0 0 16px var(--accent-glow, rgba(255,153,51,0.4)));
+  animation: epIconBounce 2.5s ease-in-out infinite;
+}
+@keyframes epIconBounce {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-8px) rotate(2deg); }
+}
+
+/* ── Text ── */
+.ep-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: 0.5px;
+  color: var(--text);
+}
+.ep-desc {
+  font-size: 14px; color: var(--text-2); line-height: 1.7; max-width: 400px;
+}
+
+/* ── Tricolor divider ── */
+.ep-divider {
+  display: flex; width: 72px; height: 3px; border-radius: 100px; overflow: hidden;
+}
+.ep-div-s { flex: 1; background: var(--saffron); }
+.ep-div-w { flex: 1; background: rgba(255,255,255,0.5); }
+.ep-div-g { flex: 1; background: var(--green-bright); }
+
+/* ── Tips ── */
+.ep-tips {
+  width: 100%; display: flex; flex-direction: column; gap: 8px;
+}
+.ep-tip {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 13px; color: var(--text-2); text-align: left;
+  animation: tipIn .4s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes tipIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.ep-tip:hover {
+  border-color: var(--accent-dim, rgba(255,153,51,0.2));
+  background: rgba(255,255,255,0.03);
+}
+.ep-tip-num {
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  color: var(--accent, var(--saffron)); flex-shrink: 0;
+  padding: 3px 8px; border-radius: 6px;
+  background: var(--accent-dim, var(--saffron-dim));
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── Actions ── */
+.ep-actions {
+  display: flex; gap: 10px; width: 100%;
+}
+.ep-btn {
+  flex: 1; padding: 14px; border-radius: 14px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px; font-weight: 700; letter-spacing: 1px;
+  cursor: pointer; transition: background .18s, box-shadow .18s, transform .15s;
+  border: 1.5px solid;
+}
+.ep-btn:active { transform: scale(0.98); }
+
+.ep-btn--accent {
+  background: var(--accent-dim, var(--saffron-dim));
+  border-color: color-mix(in srgb, var(--accent, #FF9933) 50%, transparent);
+  color: var(--accent, var(--saffron));
+}
+.ep-btn--accent:hover {
+  background: color-mix(in srgb, var(--accent, #FF9933) 18%, transparent);
+  box-shadow: 0 0 26px var(--accent-glow, rgba(255,153,51,0.3));
+}
+.ep-btn--outline {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-2);
+}
+.ep-btn--outline:hover { border-color: rgba(255,255,255,0.18); color: var(--text); }
+
+/* ── Badge ── */
+.ep-badge {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px;
+  color: var(--text-3); text-transform: uppercase;
+}
+.ep-badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent, var(--saffron));
+  animation: badgePulse 2s ease-in-out infinite;
+}
+@keyframes badgePulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .ep-actions { flex-direction: column; }
+  .ep-code-bg { font-size: 80px; }
+  .ep-code-fg { font-size: 64px; }
+  .ep-icon    { font-size: 42px; }
+}
