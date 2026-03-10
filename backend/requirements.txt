@@ -1,25 +1,12 @@
-# ══════════════════════════════════════════════════════
-#  Secure E-Voting System — Python Backend Dependencies
-#  Install: pip install -r requirements.txt
-# ══════════════════════════════════════════════════════
-
-# ── Web Framework ──────────────────────────────────────
 Flask==3.0.3
 Flask-Cors==4.0.1
 
-# ── Computer Vision ────────────────────────────────────
-opencv-python==4.10.0.84
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
 
-# ── Face Recognition ───────────────────────────────────
 face-recognition==1.3.0
 face-recognition-models==0.3.0
-dlib==19.24.4
 
-# ── MediaPipe (FaceLandmarker Tasks API 0.10+) ─────────
-mediapipe==0.10.14
+mediapipe==0.10.32
 
-# ── Numerical ─────────────────────────────────────────
-numpy==1.26.4
-
-# ── Utilities (stdlib wrappers used in app.py) ─────────
-Werkzeug==3.0.3
+gunicorn==22.0.0
