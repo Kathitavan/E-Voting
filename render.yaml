@@ -5,15 +5,11 @@ services:
     region: singapore
     rootDir: backend
 
-    # ── Force Python 3.11 — dlib + face-recognition + mediapipe all support it
-    # Python 3.14 has NO wheels for these packages
     pythonVersion: "3.11.9"
 
-    buildCommand: >-
-      apt-get update -qq &&
-      apt-get install -y -qq cmake build-essential libopenblas-dev liblapack-dev libx11-dev &&
-      pip install --upgrade pip &&
-      pip install -r requirements.txt
+    # No apt-get — Render free tier has read-only filesystem for apt
+    # dlib 19.24.2 has a pre-built wheel for Python 3.11 Linux x86_64
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
 
     startCommand: gunicorn app:app --workers 1 --threads 2 --timeout 120 --bind 0.0.0.0:$PORT
 
