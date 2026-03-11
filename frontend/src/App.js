@@ -10,20 +10,21 @@ import ModeSelectionPage from "./pages/ModeSelectionPage";
 import VoteSuccessPage from "./pages/VoteSuccessPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMode from "./pages/AdminMode";
+import VoterListPage from "./pages/VoterListPage";   // ── already imported ✓
 import ProgressFlow from "./components/ProgressFlow";
 import ErrorPage, { Error404, ErrorOffline } from "./pages/Errorpage";
 import "./styles/app.css";
 
 const PROGRESS_STEPS  = ["qr", "details", "face", "mode", "voting", "accessible"];
-const ALL_VALID_STEPS = [...PROGRESS_STEPS, "success", "dashboard", "admin-mode", "register"];
+const ALL_VALID_STEPS = [...PROGRESS_STEPS, "success", "dashboard", "admin-mode", "register", "voters"];
 
 function App() {
-  const [step,       setStep]      = useState("qr");
-  const [user,       setUser]      = useState(null);
-  const [adminAuth,  setAdminAuth] = useState(false);
-  const [offline,    setOffline]   = useState(!navigator.onLine);
-  const [error,      setError]     = useState(null);
-  const [navIn,      setNavIn]     = useState(false);
+  const [step,      setStep]      = useState("qr");
+  const [user,      setUser]      = useState(null);
+  const [adminAuth, setAdminAuth] = useState(false);
+  const [offline,   setOffline]   = useState(!navigator.onLine);
+  const [error,     setError]     = useState(null);
+  const [navIn,     setNavIn]     = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setNavIn(true), 60);
@@ -69,15 +70,13 @@ function App() {
   return (
     <div className="app-root">
 
-      {/* ── DECORATIVE BG ─────────────────────────── */}
       <div className="bg-grid" aria-hidden="true" />
       <div className="bg-glow bg-glow-1" aria-hidden="true" />
       <div className="bg-glow bg-glow-2" aria-hidden="true" />
 
-      {/* ── NAVBAR ────────────────────────────────── */}
+      {/* ── NAVBAR ── */}
       <header className={`navbar${navIn ? " navbar--in" : ""}`}>
 
-        {/* Brand */}
         <div className="navbar__brand">
           <div className="navbar__emblem">
             <img
@@ -94,7 +93,6 @@ function App() {
           </div>
         </div>
 
-        {/* Status pill */}
         <div className="navbar__status">
           <span className={`status-pill${adminAuth ? " status-pill--admin" : ""}`}>
             <span className="status-pill__dot" />
@@ -102,7 +100,6 @@ function App() {
           </span>
         </div>
 
-        {/* Actions */}
         <nav className="navbar__actions">
           {!adminAuth && (
             <button className="nbtn nbtn--primary" onClick={() => setStep("qr")}>
@@ -113,6 +110,7 @@ function App() {
           {adminAuth && (
             <>
               <button className="nbtn nbtn--ghost" onClick={() => setStep("dashboard")}>Dashboard</button>
+              <button className="nbtn nbtn--ghost" onClick={() => setStep("voters")}>Voter List</button>
               <button className="nbtn nbtn--ghost" onClick={() => setStep("admin-mode")}>Election Control</button>
               <button className="nbtn nbtn--ghost" onClick={() => setStep("register")}>Register Voter</button>
               <button className="nbtn nbtn--danger" onClick={logoutAdmin}>
@@ -125,7 +123,7 @@ function App() {
 
       </header>
 
-      {/* ── SECURITY BAR ──────────────────────────── */}
+      {/* ── SECURITY BAR ── */}
       <div className="sec-bar">
         <span><IconShield /> 256-bit TLS Encrypted</span>
         <span className="sec-bar__dot" />
@@ -136,12 +134,12 @@ function App() {
         <span><IconCheck /> Tamper-Proof Audit Trail</span>
       </div>
 
-      {/* ── PROGRESS ──────────────────────────────── */}
+      {/* ── PROGRESS ── */}
       {!adminAuth && PROGRESS_STEPS.includes(step) && (
         <ProgressFlow step={step} />
       )}
 
-      {/* ── CONTENT ───────────────────────────────── */}
+      {/* ── CONTENT ── */}
       <main className="page-content">
         {!adminAuth && step === "qr"        && <QrPage setStep={setStep} setUser={setUser} onError={triggerError} />}
         {!adminAuth && step === "details"    && <DetailsPage user={user} setStep={setStep} onError={triggerError} />}
@@ -153,10 +151,12 @@ function App() {
         {adminAuth  && step === "dashboard"  && <AdminDashboard onError={triggerError} />}
         {adminAuth  && step === "admin-mode" && <AdminMode onError={triggerError} />}
         {adminAuth  && step === "register"   && <RegisterPage onError={triggerError} />}
+        {/* ── FIX: VoterListPage was imported but never rendered ── */}
+        {adminAuth  && step === "voters"     && <VoterListPage onError={triggerError} />}
         {!ALL_VALID_STEPS.includes(step)     && <Error404 onHome={() => setStep("qr")} />}
       </main>
 
-      {/* ── FOOTER ────────────────────────────────── */}
+      {/* ── FOOTER ── */}
       <footer className="app-footer">
         <span>© {new Date().getFullYear()} National Election Commission</span>
         <span className="app-footer__sep" />
@@ -169,7 +169,6 @@ function App() {
   );
 }
 
-// ── Inline SVG icons (zero dependency) ────────────────────────────
 const IconBallot  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>;
 const IconLogout  = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
 const IconShield  = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
