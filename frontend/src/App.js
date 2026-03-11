@@ -10,7 +10,7 @@ import ModeSelectionPage from "./pages/ModeSelectionPage";
 import VoteSuccessPage from "./pages/VoteSuccessPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMode from "./pages/AdminMode";
-import VoterListPage from "./pages/VoterListPage";   // ── already imported ✓
+import VoterListPage from "./pages/VoterListPage";
 import ProgressFlow from "./components/ProgressFlow";
 import ErrorPage, { Error404, ErrorOffline } from "./pages/Errorpage";
 import "./styles/app.css";
@@ -19,12 +19,12 @@ const PROGRESS_STEPS  = ["qr", "details", "face", "mode", "voting", "accessible"
 const ALL_VALID_STEPS = [...PROGRESS_STEPS, "success", "dashboard", "admin-mode", "register", "voters"];
 
 function App() {
-  const [step,      setStep]      = useState("qr");
-  const [user,      setUser]      = useState(null);
-  const [adminAuth, setAdminAuth] = useState(false);
-  const [offline,   setOffline]   = useState(!navigator.onLine);
-  const [error,     setError]     = useState(null);
-  const [navIn,     setNavIn]     = useState(false);
+  const [step,       setStep]      = useState("qr");
+  const [user,       setUser]      = useState(null);
+  const [adminAuth,  setAdminAuth] = useState(false);
+  const [offline,    setOffline]   = useState(!navigator.onLine);
+  const [error,      setError]     = useState(null);
+  const [navIn,      setNavIn]     = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setNavIn(true), 60);
@@ -74,9 +74,7 @@ function App() {
       <div className="bg-glow bg-glow-1" aria-hidden="true" />
       <div className="bg-glow bg-glow-2" aria-hidden="true" />
 
-      {/* ── NAVBAR ── */}
       <header className={`navbar${navIn ? " navbar--in" : ""}`}>
-
         <div className="navbar__brand">
           <div className="navbar__emblem">
             <img
@@ -110,7 +108,7 @@ function App() {
           {adminAuth && (
             <>
               <button className="nbtn nbtn--ghost" onClick={() => setStep("dashboard")}>Dashboard</button>
-              <button className="nbtn nbtn--ghost" onClick={() => setStep("voters")}>Voter List</button>
+              <button className="nbtn nbtn--ghost" onClick={() => setStep("voters")}>👥 Voter List</button>
               <button className="nbtn nbtn--ghost" onClick={() => setStep("admin-mode")}>Election Control</button>
               <button className="nbtn nbtn--ghost" onClick={() => setStep("register")}>Register Voter</button>
               <button className="nbtn nbtn--danger" onClick={logoutAdmin}>
@@ -120,10 +118,8 @@ function App() {
             </>
           )}
         </nav>
-
       </header>
 
-      {/* ── SECURITY BAR ── */}
       <div className="sec-bar">
         <span><IconShield /> 256-bit TLS Encrypted</span>
         <span className="sec-bar__dot" />
@@ -134,12 +130,10 @@ function App() {
         <span><IconCheck /> Tamper-Proof Audit Trail</span>
       </div>
 
-      {/* ── PROGRESS ── */}
       {!adminAuth && PROGRESS_STEPS.includes(step) && (
         <ProgressFlow step={step} />
       )}
 
-      {/* ── CONTENT ── */}
       <main className="page-content">
         {!adminAuth && step === "qr"        && <QrPage setStep={setStep} setUser={setUser} onError={triggerError} />}
         {!adminAuth && step === "details"    && <DetailsPage user={user} setStep={setStep} onError={triggerError} />}
@@ -151,12 +145,10 @@ function App() {
         {adminAuth  && step === "dashboard"  && <AdminDashboard onError={triggerError} />}
         {adminAuth  && step === "admin-mode" && <AdminMode onError={triggerError} />}
         {adminAuth  && step === "register"   && <RegisterPage onError={triggerError} />}
-        {/* ── FIX: VoterListPage was imported but never rendered ── */}
         {adminAuth  && step === "voters"     && <VoterListPage onError={triggerError} />}
         {!ALL_VALID_STEPS.includes(step)     && <Error404 onHome={() => setStep("qr")} />}
       </main>
 
-      {/* ── FOOTER ── */}
       <footer className="app-footer">
         <span>© {new Date().getFullYear()} National Election Commission</span>
         <span className="app-footer__sep" />
