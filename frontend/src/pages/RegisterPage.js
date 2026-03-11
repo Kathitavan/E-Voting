@@ -9,7 +9,10 @@ const API_TIMEOUT = 120000;
 
 export default function RegisterPage() {
 
-  const webcamRef = useRef(null);
+  const webcamRef  = useRef(null);
+  // ── FIX: track whether QR scanner is actually running
+  //    so the useEffect cleanup never calls stop() on an already-stopped scanner
+  const qrRunning  = useRef(false);
 
   const [step,        setStep]        = useState(1);
   const [name,        setName]        = useState("");
@@ -37,18 +40,33 @@ export default function RegisterPage() {
   // ── QR SCANNER ──────────────────────────────────────────────────
   useEffect(() => {
     if (step !== 1) return;
+
     const qr = new Html5Qrcode("rg-qr-reader");
+
     qr.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 220, height: 220 } },
       async (decoded) => {
+        // ── FIX: mark as stopped BEFORE calling stop()
+        //    so the cleanup function below knows not to call it again
+        qrRunning.current = false;
         try { await qr.stop(); } catch (_) {}
+
         setQrData(decoded);
         showToast("QR scanned successfully", "success");
         setStep(2);
       }
-    ).catch(() => showToast("Camera permission denied", "error"));
-    return () => { qr.stop().catch(() => {}); };
+    )
+    .then(() => { qrRunning.current = true; })
+    .catch(() => showToast("Camera permission denied", "error"));
+
+    return () => {
+      // ── FIX: only stop if scanner is still actually running
+      if (qrRunning.current) {
+        qrRunning.current = false;
+        qr.stop().catch(() => {});
+      }
+    };
   }, [step]);
 
   // ── CAPTURE ──────────────────────────────────────────────────────
@@ -139,15 +157,11 @@ export default function RegisterPage() {
   return (
     <div className="rg-root">
 
-      {/* Tricolor stripes */}
       <div className="rg-stripe"><div className="rg-s"/><div className="rg-w"/><div className="rg-g"/></div>
       <div className="rg-stripe rg-stripe--btm"><div className="rg-s"/><div className="rg-w"/><div className="rg-g"/></div>
-
-      {/* Glows */}
       <div className="rg-glow rg-glow--s"/>
       <div className="rg-glow rg-glow--g"/>
 
-      {/* Toast */}
       {toast && (
         <div className={`rg-toast rg-toast--${toast.type}`}>{toast.msg}</div>
       )}
@@ -228,7 +242,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* QR confirmed banner */}
             <div className="rg-qr-confirmed">
               <span>✅</span>
               <span className="rg-qr-id">
@@ -300,7 +313,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Summary */}
             <div className="rg-summary">
               <span className="rg-summary-item">👤 {name}</span>
               <span className="rg-summary-sep">·</span>
@@ -309,7 +321,6 @@ export default function RegisterPage() {
               <span className="rg-summary-item">{age} yrs</span>
             </div>
 
-            {/* Camera / preview */}
             <div className="rg-cam-wrap">
               <div className="rg-corner rg-corner--tl rg-corner--green"/>
               <div className="rg-corner rg-corner--tr rg-corner--green"/>
@@ -341,7 +352,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Capture / retake */}
             {!captured ? (
               <button
                 className="rg-btn-capture"
@@ -354,7 +364,6 @@ export default function RegisterPage() {
               </button>
             )}
 
-            {/* Register button + progress */}
             <div className="rg-actions-row">
               <button className="rg-btn-back" onClick={() => setStep(2)}>← Back</button>
               <button
@@ -369,7 +378,6 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            {/* Status while submitting */}
             {submitting && (
               <div className="rg-status-row">
                 <div className="rg-status-dot rg-status-dot--amber"/>
