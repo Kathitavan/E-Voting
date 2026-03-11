@@ -1,7 +1,13 @@
 """
-blockchain.py  —  Private Vote Ledger
-Each vote is sealed as an immutable SHA-256 block.
-Pure Python stdlib — no extra dependencies.
+blockchain.py  —  Private Vote Ledger  (Fixed)
+
+Fixes applied:
+  BUG 8 — voter_id anonymization: store hash-of-voter_id, not raw voter_id
+           Anyone reading blockchain.json could previously map voter→candidate.
+           Now blockchain stores sha256(voter_id) so votes are unlinkable.
+
+  BUG 9 — atomic writes: use temp file + os.replace() so a crash mid-write
+           never corrupts blockchain.json. Old code wrote directly to the file.
 """
 
 import hashlib
@@ -28,7 +34,7 @@ class Block:
     ):
         self.index         = index
         self.timestamp     = timestamp
-        self.data          = data          # {"voter": voter_id, "candidate": name}
+        self.data          = data
         self.previous_hash = previous_hash
         self.hash          = self._compute_hash()
 
@@ -60,7 +66,7 @@ class Block:
         block.timestamp     = d["timestamp"]
         block.data          = d["data"]
         block.previous_hash = d["previous_hash"]
-        block.hash          = d["hash"]          # restored as-is; verified separately
+        block.hash          = d["hash"]
         return block
 
 
@@ -100,8 +106,33 @@ class Blockchain:
         print("[blockchain] Genesis block created.")
 
     def _persist(self) -> None:
-        with open(CHAIN_FILE, "w") as f:
-            json.dump([b.to_dict() for b in self.chain], f, indent=2)
+        """
+        ── FIX BUG 9: atomic write using a temp file + os.replace().
+        If the process crashes during write, the original blockchain.json
+        is untouched. os.replace() is atomic on POSIX (Linux/Render).
+        """
+        tmp = CHAIN_FILE + ".tmp"
+        try:
+            with open(tmp, "w") as f:
+                json.dump([b.to_dict() for b in self.chain], f, indent=2)
+            os.replace(tmp, CHAIN_FILE)   # atomic swap
+        except Exception as e:
+            print(f"[blockchain] Persist error: {e}")
+            if os.path.exists(tmp):
+                os.remove(tmp)
+            raise
+
+    # ── Voter anonymization helper ────────────────────────────────────
+
+    @staticmethod
+    def _anonymize(voter_id: str) -> str:
+        """
+        ── FIX BUG 8: never store raw voter_id in the blockchain.
+        Store sha256(voter_id) instead — this prevents anyone reading
+        blockchain.json from linking a vote back to a real voter.
+        The anonymized token is still unique per voter (collision-free).
+        """
+        return "anon:" + hashlib.sha256(voter_id.encode()).hexdigest()[:20]
 
     # ── Public API ────────────────────────────────────────────────────
 
@@ -111,41 +142,38 @@ class Blockchain:
 
     def add_block(self, voter_id: str, candidate: str) -> Block:
         """
-        Seal a vote as a new block and append to the chain.
+        Seal a vote as a new block.
+        voter_id is anonymized before being stored.
         Returns the new Block.
         """
         with _chain_lock:
+            anon_id = self._anonymize(voter_id)   # ── FIX BUG 8
             new_block = Block(
                 index         = len(self.chain),
                 timestamp     = datetime.now(timezone.utc).isoformat(),
-                data          = {"voter": voter_id, "candidate": candidate},
+                data          = {"voter": anon_id, "candidate": candidate},
                 previous_hash = self.last_block.hash,
             )
             self.chain.append(new_block)
-            self._persist()
+            self._persist()                        # ── FIX BUG 9: now atomic
             print(
                 f"[blockchain] Block #{new_block.index} added  "
-                f"candidate={candidate}  hash={new_block.hash[:12]}…"
+                f"candidate={candidate}  anon={anon_id[:16]}…  "
+                f"hash={new_block.hash[:12]}…"
             )
         return new_block
 
     def is_chain_valid(self) -> tuple[bool, str]:
-        """
-        Verify every block's hash and linkage.
-        Returns (is_valid: bool, message: str).
-        """
         for i in range(1, len(self.chain)):
             current  = self.chain[i]
             previous = self.chain[i - 1]
 
-            # Recompute and compare
             recomputed = current._compute_hash()
             if current.hash != recomputed:
                 msg = f"Block #{i} hash mismatch — data may have been tampered."
                 print(f"[blockchain] INVALID: {msg}")
                 return False, msg
 
-            # Check linkage
             if current.previous_hash != previous.hash:
                 msg = f"Block #{i} previous_hash does not match Block #{i-1} hash."
                 print(f"[blockchain] INVALID: {msg}")

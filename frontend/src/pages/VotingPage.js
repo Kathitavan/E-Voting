@@ -5,6 +5,9 @@ import SystemLoader from "../components/SystemLoader";
 
 const API = "https://e-voting-backend-zmxj.onrender.com";
 
+// ── FIX BUG 6: vote endpoint needs a timeout — Render free can be slow
+const VOTE_TIMEOUT = 60000;
+
 const candidates = [
   { name: "Dravida Munnetra Kazhagam",                tamil: "திராவிட முன்னேற்ற கழகம்",        short: "DMK",  logo: "/party-logos/dmk.png"      },
   { name: "All India Anna Dravida Munnetra Kazhagam", tamil: "அண்ணா திராவிட முன்னேற்ற கழகம்",  short: "ADMK", logo: "/party-logos/admk.png"     },
@@ -40,20 +43,32 @@ export default function VotingPage({ user, setStep }) {
     setConfirm(false);
     setLoading(true);
     try {
-      const res = await axios.post(`${API}/vote`, {
-        qr_string: user.qr_string,
-        candidate: selected.short,
-      });
-      if (res.data.status === "vote_success") {
+      const res = await axios.post(
+        `${API}/vote`,
+        {
+          qr_string: user.qr_string,
+          candidate: selected.short,
+        },
+        { timeout: VOTE_TIMEOUT }  // ── FIX BUG 6: was missing entirely
+      );
+
+      const status = res.data.status;
+
+      if (status === "vote_success") {
         setStep("success");
-      } else if (res.data.status === "already_voted") {
+      } else if (status === "already_voted") {
         showToast("You have already voted in this election", "warn");
         setTimeout(() => setStep("qr"), 2500);
       } else {
         showToast("Vote could not be recorded — please try again");
       }
-    } catch {
-      showToast("Backend connection error");
+    } catch (err) {
+      // ── FIX: distinguish timeout from network error
+      if (err.code === "ECONNABORTED") {
+        showToast("Server is taking too long — please try again in a moment", "error");
+      } else {
+        showToast("Backend connection error");
+      }
     } finally {
       setLoading(false);
     }
@@ -64,14 +79,10 @@ export default function VotingPage({ user, setStep }) {
   return (
     <div className="vp-root">
 
-      {/* Tricolor stripe */}
       <div className="vp-stripe"><div className="vp-s"/><div className="vp-w"/><div className="vp-g"/></div>
-
-      {/* Ambient glows */}
       <div className="vp-glow vp-glow--s"/>
       <div className="vp-glow vp-glow--g"/>
 
-      {/* ══ CONFIRM DIALOG ══ */}
       {confirm && selected && (
         <div className="vp-overlay">
           <div className="vp-dialog">
@@ -98,7 +109,6 @@ export default function VotingPage({ user, setStep }) {
         </div>
       )}
 
-      {/* ══ TOAST ══ */}
       {toast && (
         <div className={`vp-toast vp-toast--${toast.type}`}>
           <span>{toast.type === "error" ? "✕" : "⚠"}</span> {toast.msg}
@@ -107,7 +117,6 @@ export default function VotingPage({ user, setStep }) {
 
       <div className="vp-wrap">
 
-        {/* Header */}
         <div className="vp-header">
           <div>
             <div className="vp-tag"><span className="vp-tag-dot"/>ELECTRONIC VOTING MACHINE</div>
@@ -121,10 +130,8 @@ export default function VotingPage({ user, setStep }) {
           <div className="vp-emblem">🇮🇳</div>
         </div>
 
-        {/* Body: list + sidebar */}
         <div className="vp-body">
 
-          {/* ── Candidate list ── */}
           <div className="vp-list">
             {candidates.map((c, i) => {
               const isSel = selected?.short === c.short;
@@ -137,30 +144,24 @@ export default function VotingPage({ user, setStep }) {
                   onKeyDown={e => e.key === "Enter" && handleSelect(c)}
                 >
                   <div className="vp-serial">{String(i + 1).padStart(2, "0")}</div>
-
                   <div className="vp-logo-wrap">
                     <img src={c.logo} alt={c.short} className="vp-logo"/>
                   </div>
-
                   <div className="vp-info">
                     <span className="vp-short">{c.short}</span>
                     <span className="vp-name">{c.name}</span>
                     <span className="vp-tamil">{c.tamil}</span>
                   </div>
-
                   <div className={`vp-radio${isSel ? " vp-radio--sel" : ""}`}>
                     {isSel && <div className="vp-radio-dot"/>}
                   </div>
-
                   {isSel && <div className="vp-row-glow"/>}
                 </div>
               );
             })}
           </div>
 
-          {/* ── Sticky sidebar ── */}
           <aside className="vp-sidebar">
-
             <div className="vp-voter-card">
               <div className="vp-voter-avatar">
                 {user?.voter_info?.name?.charAt(0).toUpperCase() || "V"}
@@ -201,11 +202,9 @@ export default function VotingPage({ user, setStep }) {
             </button>
 
             <div className="vp-sec-note">🔒 Your vote is encrypted and anonymous</div>
-
           </aside>
         </div>
 
-        {/* Mobile bottom bar */}
         <div className="vp-mobile-bar">
           {selected && (
             <div className="vp-mobile-sel">

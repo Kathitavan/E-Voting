@@ -2,7 +2,6 @@ import "../styles/details.css";
 
 export default function DetailsPage({ user, setStep }) {
 
-  // Handle missing or empty user object safely
   if (!user || Object.keys(user).length === 0) {
     return (
       <div className="dp-root">
@@ -15,8 +14,16 @@ export default function DetailsPage({ user, setStep }) {
     );
   }
 
-  // Support both backend formats
   const info = user.voter_info || user;
+
+  // ── FIX BUG 4: truncate the 64-char SHA-256 hash for display only
+  //    Store the full qr_string in user object — only shorten for UI
+  const qrDisplay = (() => {
+    const raw = user.qr_string || info.qr_string || "";
+    if (!raw) return "N/A";
+    if (raw.length > 16) return raw.slice(0, 8) + "…" + raw.slice(-4);
+    return raw;
+  })();
 
   const genderIcon =
     info.gender?.toLowerCase() === "female" ? "♀" : "♂";
@@ -24,20 +31,17 @@ export default function DetailsPage({ user, setStep }) {
   return (
     <div className="dp-root">
 
-      {/* Tricolor stripe */}
       <div className="dp-stripe">
         <div className="dp-stripe-s" />
         <div className="dp-stripe-w" />
         <div className="dp-stripe-g" />
       </div>
 
-      {/* Ambient glows */}
       <div className="dp-glow dp-glow--s" />
       <div className="dp-glow dp-glow--g" />
 
       <div className="dp-wrap">
 
-        {/* Header */}
         <div className="dp-header">
           <div className="dp-header-icon">🪪</div>
           <div>
@@ -48,7 +52,6 @@ export default function DetailsPage({ user, setStep }) {
           </div>
         </div>
 
-        {/* Voter card */}
         <div className="dp-card">
 
           <div className="dp-card-head">
@@ -71,10 +74,11 @@ export default function DetailsPage({ user, setStep }) {
             <div className="dp-info-row">
               <div className="dp-info-label">
                 <span className="dp-info-icon">🪪</span>
-                QR ID
+                Voter ID
               </div>
+              {/* ── FIX BUG 4: show truncated ID, not full 64-char hash */}
               <div className="dp-info-value dp-info-value--mono">
-                {user.qr_string || info.qr_string || "N/A"}
+                {qrDisplay}
               </div>
             </div>
 
@@ -94,9 +98,7 @@ export default function DetailsPage({ user, setStep }) {
                 Gender
               </div>
               <div className="dp-info-value">
-                <span
-                  className={`dp-gender-badge dp-gender-badge--${info.gender?.toLowerCase() || "unknown"}`}
-                >
+                <span className={`dp-gender-badge dp-gender-badge--${info.gender?.toLowerCase() || "unknown"}`}>
                   {info.gender || "Unknown"}
                 </span>
               </div>
@@ -126,46 +128,31 @@ export default function DetailsPage({ user, setStep }) {
 
         </div>
 
-        {/* Action buttons */}
         <div className="dp-actions">
-          <button
-            className="dp-btn-cancel"
-            onClick={() => setStep("qr")}
-          >
+          <button className="dp-btn-cancel"  onClick={() => setStep("qr")}>
             ← Back
           </button>
-
-          <button
-            className="dp-btn-proceed"
-            onClick={() => setStep("face")}
-          >
+          <button className="dp-btn-proceed" onClick={() => setStep("face")}>
             Proceed to Face Auth →
           </button>
         </div>
 
-        {/* Step indicator */}
         <div className="dp-steps">
           <div className="dp-step dp-step--done">
             <div className="dp-step-dot">✓</div>
             <span>QR Scan</span>
           </div>
-
           <div className="dp-step-line dp-step-line--done" />
-
           <div className="dp-step dp-step--active">
             <div className="dp-step-dot">2</div>
             <span>Verify Details</span>
           </div>
-
           <div className="dp-step-line" />
-
           <div className="dp-step">
             <div className="dp-step-dot">3</div>
             <span>Face Auth</span>
           </div>
-
           <div className="dp-step-line" />
-
           <div className="dp-step">
             <div className="dp-step-dot">4</div>
             <span>Vote</span>
@@ -174,7 +161,6 @@ export default function DetailsPage({ user, setStep }) {
 
       </div>
 
-      {/* Bottom stripe */}
       <div className="dp-stripe dp-stripe--bottom">
         <div className="dp-stripe-s" />
         <div className="dp-stripe-w" />

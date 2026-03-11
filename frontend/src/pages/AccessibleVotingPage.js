@@ -1,18 +1,7 @@
-// AccessibleVotingPage.jsx
-// Gesture-only voting for accessible voters.
-// Uses backend /gesture endpoint (MediaPipe) — no face-api.js.
-//
-// PHASE 1 — SELECTING
-//   Tilt head UP   → move highlight up
-//   Tilt head DOWN → move highlight down
-//   Hold BLINK 1s  → enter PHASE 2
-//
-// PHASE 2 — CONFIRMING (full-screen popup)
-//   Tilt UP   (hold 400ms) → cast vote
-//   Tilt DOWN (hold 400ms) → cancel back to PHASE 1
-//   Auto-cancel after 8s
-//
-// PHASE 3 — CASTING (locked, API fires)
+// AccessibleVotingPage.jsx  —  Fixed version
+// ── FIX BUG 7: AbortSignal.timeout was 500ms — far too short for Render.
+//    Backend gesture call takes 1-3s minimum. Raised to 3000ms.
+//    Every poll was silently aborting, so head tilts never registered.
 
 import axios from "axios";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -20,11 +9,13 @@ import SystemLoader from "../components/SystemLoader";
 import "../styles/accessibleVoting.css";
 
 const API             = "https://e-voting-backend-zmxj.onrender.com";
-const POLL_MS         = 80;      // ~12.5 fps
-const BLINK_HOLD_MS   = 1000;    // 1s hold blink → trigger confirm
-const NAV_COOLDOWN_MS = 700;     // ms between nav steps
-const TILT_HOLD_MS    = 400;     // ms to hold tilt before action fires
-const CONFIRM_SEC     = 8;       // auto-cancel countdown
+const POLL_MS         = 300;     // ── FIX: was 80ms (12.5fps overloading slow server)
+                                 //    300ms = ~3fps, enough for gesture + gives server breathing room
+const BLINK_HOLD_MS   = 1000;
+const NAV_COOLDOWN_MS = 700;
+const TILT_HOLD_MS    = 400;
+const CONFIRM_SEC     = 8;
+const GESTURE_TIMEOUT = 3000;   // ── FIX BUG 7: was 500ms — raised to 3000ms
 
 const candidates = [
   { name: "Dravida Munnetra Kazhagam",                tamil: "திராவிட முன்னேற்ற கழகம்",        short: "DMK",  logo: "/party-logos/dmk.png"      },
@@ -47,8 +38,8 @@ const STATUS_META = {
   no_face:    { label: "No face found",    color: "#f87171", icon: "⚠️" },
 };
 
-const CIRC_SMALL = 2 * Math.PI * 20;   // blink ring  r=20, svg 56×56
-const CIRC_CD    = 2 * Math.PI * 34;   // countdown   r=34, svg 88×88
+const CIRC_SMALL = 2 * Math.PI * 20;
+const CIRC_CD    = 2 * Math.PI * 34;
 
 export default function AccessibleVotingPage({ user, setStep }) {
   const [loading,          setLoading]          = useState(false);
@@ -70,11 +61,12 @@ export default function AccessibleVotingPage({ user, setStep }) {
   const countdownRef      = useRef(null);
   const intervalRef       = useRef(null);
   const pendingRef        = useRef(null);
+  // ── FIX: in-flight guard so 300ms poll doesn't pile up requests
+  const inFlightRef       = useRef(false);
 
   useEffect(() => { phaseRef.current    = phase;         }, [phase]);
   useEffect(() => { selectedRef.current = selectedIndex; }, [selectedIndex]);
 
-  // ── Webcam ──────────────────────────────────────────────────
   useEffect(() => {
     let stream;
     navigator.mediaDevices
@@ -93,14 +85,12 @@ export default function AccessibleVotingPage({ user, setStep }) {
     return () => stream?.getTracks().forEach(t => t.stop());
   }, []);
 
-  // ── Auto-scroll selected card ────────────────────────────────
   useEffect(() => {
     document
       .querySelector(`[data-idx="${selectedIndex}"]`)
       ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selectedIndex]);
 
-  // ── Capture frame ────────────────────────────────────────────
   const captureFrame = useCallback(() => {
     const v = webcamRef.current;
     if (!v || v.readyState < 2) return null;
@@ -110,7 +100,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
     return c.toDataURL("image/jpeg", 0.65);
   }, []);
 
-  // ── Cancel confirm ───────────────────────────────────────────
   const cancelConfirm = useCallback(() => {
     clearTimeout(confirmTimerRef.current);
     clearInterval(countdownRef.current);
@@ -123,7 +112,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
     setPhase("selecting");
   }, []);
 
-  // ── Enter confirm ────────────────────────────────────────────
   const enterConfirm = useCallback(() => {
     const c = candidates[selectedRef.current];
     pendingRef.current = c;
@@ -144,7 +132,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
     }, 1000);
   }, [cancelConfirm]);
 
-  // ── Cast vote ────────────────────────────────────────────────
   const castVote = useCallback(async (candidate) => {
     clearTimeout(confirmTimerRef.current);
     clearInterval(countdownRef.current);
@@ -152,10 +139,11 @@ export default function AccessibleVotingPage({ user, setStep }) {
     setPhase("casting");
     setLoading(true);
     try {
-      const res = await axios.post(`${API}/vote`, {
-        qr_string: user.qr_string,
-        candidate: candidate.short,
-      });
+      const res = await axios.post(
+        `${API}/vote`,
+        { qr_string: user.qr_string, candidate: candidate.short },
+        { timeout: 60000 }
+      );
       if      (res.data.status === "vote_success")  setStep("success");
       else if (res.data.status === "already_voted") { alert("Already voted."); setStep("qr"); }
       else    { alert("Vote failed. Try again."); setLoading(false); }
@@ -165,25 +153,33 @@ export default function AccessibleVotingPage({ user, setStep }) {
     }
   }, [user, setStep]);
 
-  // ── Poll gesture ─────────────────────────────────────────────
   const poll = useCallback(async () => {
     const p = phaseRef.current;
     if (p === "casting") return;
 
+    // ── FIX: skip if previous request still running
+    if (inFlightRef.current) return;
+
     const frame = captureFrame();
     if (!frame) { setGestureStatus("idle"); return; }
 
+    inFlightRef.current = true;
+
     let res;
     try {
+      // ── FIX BUG 7: timeout raised from 500ms → 3000ms
       const r = await fetch(`${API}/gesture`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ image: frame }),
-        signal:  AbortSignal.timeout(500),
+        signal:  AbortSignal.timeout(GESTURE_TIMEOUT),
       });
       res = await r.json();
     } catch {
+      inFlightRef.current = false;
       return;
+    } finally {
+      inFlightRef.current = false;
     }
 
     if (res.status === "no_face") {
@@ -196,7 +192,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
 
     const now = Date.now();
 
-    // ════ PHASE 1: SELECTING ════════════════════════════════════
     if (p === "selecting") {
       if (res.blink) {
         setGestureStatus("blink");
@@ -212,7 +207,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
         return;
       }
 
-      // Eyes open → reset blink
       blinkStartRef.current = null;
       setBlinkProgress(0);
 
@@ -236,7 +230,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
       }
     }
 
-    // ════ PHASE 2: CONFIRMING ═══════════════════════════════════
     else if (p === "confirming") {
       if (res.direction !== "neutral") {
         const t = tiltRef.current;
@@ -256,7 +249,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
     }
   }, [captureFrame, enterConfirm, castVote, cancelConfirm]);
 
-  // ── Start polling when camera ready ─────────────────────────
   useEffect(() => {
     if (!camReady) return;
     intervalRef.current = setInterval(poll, POLL_MS);
@@ -265,30 +257,21 @@ export default function AccessibleVotingPage({ user, setStep }) {
 
   if (loading) return <SystemLoader message="Recording your vote securely…" />;
 
-  const meta        = STATUS_META[gestureStatus] || STATUS_META.idle;
-  const dashBlink   = CIRC_SMALL * (1 - blinkProgress / 100);
-  const dashCD      = CIRC_CD    * (1 - confirmCountdown / CONFIRM_SEC);
+  const meta         = STATUS_META[gestureStatus] || STATUS_META.idle;
+  const dashBlink    = CIRC_SMALL * (1 - blinkProgress / 100);
+  const dashCD       = CIRC_CD    * (1 - confirmCountdown / CONFIRM_SEC);
   const selCandidate = candidates[selectedIndex];
 
   return (
     <>
-      {/* ══ CONFIRM FULLSCREEN POPUP ═══════════════════════════════ */}
       {phase === "confirming" && pendingCandidate && (
         <div className="av-overlay" role="dialog" aria-modal="true">
           <div className="av-dialog">
-
-            {/* Countdown ring */}
             <div className="av-cd-wrap">
               <svg width="88" height="88" viewBox="0 0 88 88">
                 <circle className="av-cd-track" cx="44" cy="44" r="34" />
-                <circle
-                  className="av-cd-fill"
-                  cx="44" cy="44" r="34"
-                  style={{
-                    strokeDasharray:  CIRC_CD,
-                    strokeDashoffset: dashCD,
-                  }}
-                />
+                <circle className="av-cd-fill" cx="44" cy="44" r="34"
+                  style={{ strokeDasharray: CIRC_CD, strokeDashoffset: dashCD }} />
               </svg>
               <div className="av-cd-inner">
                 <span className="av-cd-num">{confirmCountdown}</span>
@@ -298,7 +281,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
 
             <h2 className="av-dlg-title">Confirm your vote?</h2>
 
-            {/* Party */}
             <div className="av-dlg-party">
               <div className="av-dlg-logo">
                 <img src={pendingCandidate.logo} alt={pendingCandidate.short} />
@@ -310,21 +292,18 @@ export default function AccessibleVotingPage({ user, setStep }) {
               </div>
             </div>
 
-            {/* Gesture actions — big, clear */}
             <div className="av-dlg-actions">
               <div className="av-action av-action--yes">
                 <div className="av-action-arrow">↑</div>
                 <div className="av-action-text">
-                  <strong>Tilt UP</strong>
-                  <span>to Confirm Vote</span>
+                  <strong>Tilt UP</strong><span>to Confirm Vote</span>
                 </div>
               </div>
               <div className="av-action-sep" />
               <div className="av-action av-action--no">
                 <div className="av-action-arrow">↓</div>
                 <div className="av-action-text">
-                  <strong>Tilt DOWN</strong>
-                  <span>to Cancel</span>
+                  <strong>Tilt DOWN</strong><span>to Cancel</span>
                 </div>
               </div>
             </div>
@@ -336,10 +315,7 @@ export default function AccessibleVotingPage({ user, setStep }) {
         </div>
       )}
 
-      {/* ══ MAIN LAYOUT ════════════════════════════════════════════ */}
       <div className="av-root">
-
-        {/* ── Top bar ── */}
         <div className="av-topbar">
           <span className="av-tag">♿ ACCESSIBLE MODE</span>
           <h1 className="av-title">Head Gesture Voting</h1>
@@ -347,11 +323,7 @@ export default function AccessibleVotingPage({ user, setStep }) {
         </div>
 
         <div className="av-body">
-
-          {/* ── Left: Camera + Status ── */}
           <div className="av-cam-col">
-
-            {/* Camera feed */}
             <div className="av-cam-wrap">
               <video ref={webcamRef} autoPlay muted playsInline className="av-cam" />
               <div className="av-cam-badge" style={{ "--c": meta.color }}>
@@ -360,20 +332,16 @@ export default function AccessibleVotingPage({ user, setStep }) {
               </div>
             </div>
 
-            {/* Blink progress */}
             <div className="av-blink-section">
               <div className="av-blink-ring">
                 <svg width="56" height="56" viewBox="0 0 56 56">
                   <circle className="av-ring-bg"  cx="28" cy="28" r="20" />
-                  <circle
-                    className="av-ring-fill"
-                    cx="28" cy="28" r="20"
+                  <circle className="av-ring-fill" cx="28" cy="28" r="20"
                     style={{
                       strokeDasharray:  CIRC_SMALL,
                       strokeDashoffset: dashBlink,
                       stroke: blinkProgress > 0 ? "#38bdf8" : "transparent",
-                    }}
-                  />
+                    }} />
                 </svg>
                 <span className="av-ring-lbl">
                   {blinkProgress > 0 ? `${Math.round(blinkProgress)}%` : "👁"}
@@ -387,7 +355,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
               </div>
             </div>
 
-            {/* Currently highlighted */}
             <div className="av-current">
               <span className="av-current-label">Currently highlighted</span>
               <div className="av-current-card">
@@ -399,7 +366,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
               </div>
             </div>
 
-            {/* Instruction legend */}
             <div className="av-legend">
               <div className="av-legend-row">
                 <span className="av-legend-arrow av-legend-arrow--up">↑</span>
@@ -424,7 +390,6 @@ export default function AccessibleVotingPage({ user, setStep }) {
             </div>
           </div>
 
-          {/* ── Right: Candidate list ── */}
           <div className="av-list-col">
             <div className="av-list-head">
               <span>{candidates.length} Parties</span>
@@ -433,43 +398,29 @@ export default function AccessibleVotingPage({ user, setStep }) {
 
             <div className="av-list">
               {candidates.map((c, i) => (
-                <div
-                  key={c.short}
-                  data-idx={i}
-                  className={`av-card${selectedIndex === i ? " av-card--sel" : ""}`}
-                >
-                  {/* Position indicator */}
+                <div key={c.short} data-idx={i}
+                  className={`av-card${selectedIndex === i ? " av-card--sel" : ""}`}>
                   <span className="av-card-num">{String(i + 1).padStart(2, "0")}</span>
-
-                  {/* Logo */}
                   <div className="av-card-logo">
                     <img src={c.logo} alt={c.short} />
                   </div>
-
-                  {/* Info */}
                   <div className="av-card-info">
                     <span className="av-card-short">{c.short}</span>
                     <span className="av-card-name">{c.name}</span>
                     <span className="av-card-tamil">{c.tamil}</span>
                   </div>
-
-                  {/* Selected tick */}
                   <div className="av-card-tick">✓</div>
-
-                  {/* Active glow bar */}
                   {selectedIndex === i && <div className="av-card-glow" />}
                 </div>
               ))}
             </div>
 
-            {/* Progress dots */}
             <div className="av-dots">
               {candidates.map((_, i) => (
                 <div key={i} className={`av-dot-item${selectedIndex === i ? " av-dot-item--on" : ""}`} />
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </>
