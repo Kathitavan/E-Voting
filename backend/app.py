@@ -11,8 +11,14 @@ from mediapipe.tasks.python import vision as mp_vision
 import insightface
 from insightface.app import FaceAnalysis
 
+# ── Blockchain ledger ─────────────────────────────────────────────────
+from blockchain import Blockchain
+
 app = Flask(__name__)
 CORS(app)
+
+# Initialise the vote ledger (loads from disk if exists)
+vote_chain = Blockchain()
 
 # ══════════════════════════════════════════════════════════════════════
 #  IN-MEMORY JSON CACHE
@@ -55,8 +61,6 @@ def make_voter_id(qr_raw: str) -> str:
 
 # ══════════════════════════════════════════════════════════════════════
 #  INSIGHTFACE  —  singleton face analyser (pre-warmed at startup)
-#  Handles: face detection + 512-d embedding in one call.
-#  No dlib, no cmake — pure ONNX pre-built wheels.
 # ══════════════════════════════════════════════════════════════════════
 
 _face_app  = None
@@ -68,40 +72,32 @@ def get_face_app() -> FaceAnalysis:
         if _face_app is None:
             print("[startup] Loading InsightFace model …")
             fa = FaceAnalysis(
-                name="buffalo_sc",          # small, fast, CPU-friendly model
-                providers=["CPUExecutionProvider"],
+                name      = "buffalo_sc",
+                providers = ["CPUExecutionProvider"],
             )
             fa.prepare(ctx_id=0, det_size=(320, 320))
             _face_app = fa
             print("[startup] InsightFace ready.")
     return _face_app
 
-# Pre-warm in background
 threading.Thread(target=get_face_app, daemon=True).start()
 
 def get_face_embedding(img_bgr: np.ndarray):
-    """
-    Returns the 512-d face embedding (numpy array) or None if no face found.
-    img_bgr: OpenCV BGR image.
-    """
-    fa     = get_face_app()
-    faces  = fa.get(img_bgr)
+    fa    = get_face_app()
+    faces = fa.get(img_bgr)
     if not faces:
         return None
-    # Use the largest detected face
     face = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0]) * (f.bbox[3]-f.bbox[1]))
-    return face.embedding  # shape (512,), float32
+    return face.embedding
 
 def embedding_similarity(e1: np.ndarray, e2: np.ndarray) -> float:
-    """Cosine similarity in [0, 1]. Higher = more similar."""
-    n1 = np.linalg.norm(e1)
-    n2 = np.linalg.norm(e2)
+    n1, n2 = np.linalg.norm(e1), np.linalg.norm(e2)
     if n1 == 0 or n2 == 0:
         return 0.0
     return float(np.dot(e1, e2) / (n1 * n2))
 
 # ══════════════════════════════════════════════════════════════════════
-#  MEDIAPIPE  —  FaceLandmarker singleton (gesture / blink / head-pose)
+#  MEDIAPIPE  —  FaceLandmarker singleton
 # ══════════════════════════════════════════════════════════════════════
 
 MODEL_PATH = "face_landmarker.task"
@@ -144,7 +140,7 @@ def get_landmarker():
 threading.Thread(target=get_landmarker, daemon=True).start()
 
 # ══════════════════════════════════════════════════════════════════════
-#  EAR / HEAD-POSE HELPERS
+#  EAR / HEAD-POSE
 # ══════════════════════════════════════════════════════════════════════
 
 LEFT_EYE            = [362, 385, 387, 263, 373, 380]
@@ -154,14 +150,14 @@ FOREHEAD            = 10
 CHIN                = 152
 EAR_BLINK_THRESHOLD = 0.20
 
-def eye_aspect_ratio(landmarks, eye_indices: list, w: int, h: int) -> float:
+def eye_aspect_ratio(landmarks, eye_indices, w, h):
     def pt(i):
         lm = landmarks[i]
         return np.array([lm.x * w, lm.y * h])
-    p1, p2, p3, p4, p5, p6 = [pt(i) for i in eye_indices]
+    p1,p2,p3,p4,p5,p6 = [pt(i) for i in eye_indices]
     return (np.linalg.norm(p2-p6) + np.linalg.norm(p3-p5)) / (2.0 * np.linalg.norm(p1-p4))
 
-def head_pitch(landmarks, h: int) -> str:
+def head_pitch(landmarks, h):
     nose_y     = landmarks[NOSE_TIP].y * h
     forehead_y = landmarks[FOREHEAD].y * h
     chin_y     = landmarks[CHIN].y     * h
@@ -174,72 +170,51 @@ def head_pitch(landmarks, h: int) -> str:
     return "neutral"
 
 # ══════════════════════════════════════════════════════════════════════
-#  PASSIVE LIVENESS DETECTION  (no extra model — CV-based checks)
+#  PASSIVE LIVENESS DETECTION
 # ══════════════════════════════════════════════════════════════════════
 
 def check_liveness(img_bgr: np.ndarray) -> tuple:
-    """Returns (is_live: bool, reason: str)."""
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
 
-    # Use insightface to locate the face ROI
     fa    = get_face_app()
     faces = fa.get(img_bgr)
     if not faces:
         return False, "no_face"
 
-    face  = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0]) * (f.bbox[3]-f.bbox[1]))
-    x1, y1, x2, y2 = [int(v) for v in face.bbox]
-    pad   = 10
-    x1    = max(0, x1 - pad)
-    y1    = max(0, y1 - pad)
-    x2    = min(w, x2 + pad)
-    y2    = min(h, y2 + pad)
-
+    face     = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0]) * (f.bbox[3]-f.bbox[1]))
+    x1,y1,x2,y2 = [int(v) for v in face.bbox]
+    pad      = 10
+    x1,y1   = max(0,x1-pad), max(0,y1-pad)
+    x2,y2   = min(w,x2+pad), min(h,y2+pad)
     face_gray = gray[y1:y2, x1:x2]
     face_bgr  = img_bgr[y1:y2, x1:x2]
 
     if face_gray.size == 0:
         return False, "bad_roi"
 
-    # Check 1: Texture
     lap_var = cv2.Laplacian(face_gray, cv2.CV_64F).var()
     if lap_var < 55.0:
-        print(f"[liveness] FAIL texture  lap_var={lap_var:.1f}")
         return False, "spoof_flat_texture"
 
-    # Check 2: Colour naturalness
     hsv    = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2HSV)
-    s_ch   = hsv[:, :, 1].astype(np.float32)
-    s_std  = float(np.std(s_ch))
-    s_mean = float(np.mean(s_ch))
-    if s_std < 8.0:
-        print(f"[liveness] FAIL uniform colour  s_std={s_std:.2f}")
+    s_ch   = hsv[:,:,1].astype(np.float32)
+    if float(np.std(s_ch)) < 8.0:
         return False, "spoof_uniform_colour"
-    if s_mean > 200:
-        print(f"[liveness] FAIL oversaturated  s_mean={s_mean:.1f}")
+    if float(np.mean(s_ch)) > 200:
         return False, "spoof_oversaturated"
 
-    # Check 3: Screen glare
     _, bright_mask = cv2.threshold(face_gray, 240, 255, cv2.THRESH_BINARY)
-    bright_ratio   = bright_mask.sum() / 255 / face_gray.size
-    if bright_ratio > 0.25:
-        print(f"[liveness] FAIL screen glare  bright_ratio={bright_ratio:.3f}")
+    if bright_mask.sum()/255/face_gray.size > 0.25:
         return False, "spoof_screen_glare"
 
-    # Check 4: Edge sharpness
     sobelx   = cv2.Sobel(face_gray, cv2.CV_64F, 1, 0, ksize=3)
     sobely   = cv2.Sobel(face_gray, cv2.CV_64F, 0, 1, ksize=3)
     grad_mag = np.sqrt(sobelx**2 + sobely**2)
-    g_mean   = float(np.mean(grad_mag))
-    g_std    = float(np.std(grad_mag))
-    if g_mean > 60 and g_std < 15:
-        print(f"[liveness] FAIL hard edges  g_mean={g_mean:.1f} g_std={g_std:.1f}")
+    if float(np.mean(grad_mag)) > 60 and float(np.std(grad_mag)) < 15:
         return False, "spoof_hard_edges"
 
-    print(f"[liveness] PASS  lap={lap_var:.1f}  s_std={s_std:.1f}  bright={bright_ratio:.3f}  g_mean={g_mean:.1f}")
     return True, "live"
-
 
 def liveness_message(reason: str) -> str:
     return {
@@ -261,19 +236,16 @@ def decode_image(image_data: str) -> np.ndarray:
         _, encoded = image_data.split(",", 1)
     except ValueError:
         encoded = image_data
-    img_bytes = base64.b64decode(encoded)
-    nparr     = np.frombuffer(img_bytes, np.uint8)
-    img       = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    nparr = np.frombuffer(base64.b64decode(encoded), np.uint8)
+    img   = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img is None:
         raise ValueError("cv2.imdecode returned None — invalid image data")
     return img
 
 def preprocess_for_face(img_bgr: np.ndarray) -> np.ndarray:
-    """CLAHE contrast normalisation — improves recognition in low light."""
     lab     = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
-    clahe   = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    l       = clahe.apply(l)
+    l       = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8)).apply(l)
     return cv2.cvtColor(cv2.merge([l, a, b]), cv2.COLOR_LAB2BGR)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -315,15 +287,14 @@ def home():
 def register():
     data     = request.get_json(silent=True)
     required = ["name", "gender", "age", "image", "qr_data"]
-
     if not data or not all(f in data for f in required):
         return jsonify({"status": "invalid_request"}), 400
 
     qr_raw    = data["qr_data"].strip()
     voter_id  = make_voter_id(qr_raw)
     face_hash = voter_id[:12]
+    database  = load_json("voter_database.json")
 
-    database = load_json("voter_database.json")
     if voter_id in database:
         return jsonify({"status": "already_registered"})
 
@@ -332,23 +303,16 @@ def register():
     except Exception as e:
         return jsonify({"status": "bad_image", "detail": str(e)}), 400
 
-    # Liveness gate
     is_live, reason = check_liveness(img)
     if not is_live:
-        return jsonify({
-            "status":  "liveness_failed",
-            "reason":  reason,
-            "message": liveness_message(reason),
-        }), 400
+        return jsonify({"status": "liveness_failed", "reason": reason, "message": liveness_message(reason)}), 400
 
-    img_pp    = preprocess_for_face(img)
-    embedding = get_face_embedding(img_pp)
+    embedding = get_face_embedding(preprocess_for_face(img))
     if embedding is None:
         return jsonify({"status": "no_face_detected"}), 400
 
-    face_file   = face_hash + ".jpg"
-    embed_file  = face_hash + ".npy"
-
+    face_file  = face_hash + ".jpg"
+    embed_file = face_hash + ".npy"
     database[voter_id] = {
         "name":       data["name"].strip(),
         "gender":     data["gender"].strip().lower(),
@@ -360,7 +324,7 @@ def register():
     save_json("voter_database.json", database)
     os.makedirs("voters", exist_ok=True)
     cv2.imwrite(f"voters/{face_file}", img)
-    np.save(f"voters/{embed_file}", embedding)   # save embedding for fast lookup
+    np.save(f"voters/{embed_file}", embedding)
 
     print(f"[register] OK  voter_id={voter_id[:12]}…  name={data['name'].strip()}")
     return jsonify({"status": "registered", "voter_id": voter_id[:8] + "…"})
@@ -377,30 +341,21 @@ def verify_qr():
 
     raw = data.get("qr_data", "")
     if not raw or not isinstance(raw, str):
-        return jsonify({"status": "invalid_request", "reason": "qr_data missing or not a string"}), 400
+        return jsonify({"status": "invalid_request", "reason": "qr_data missing"}), 400
 
-    qr_raw   = raw.strip()
-    voter_id = make_voter_id(qr_raw)
-
+    voter_id = make_voter_id(raw.strip())
     database = load_json("voter_database.json")
     voter    = database.get(voter_id)
 
     if voter is None:
-        print(f"[verify-qr] NOT FOUND  voter_id={voter_id[:12]}…")
         return jsonify({"status": "not_registered"}), 200
 
     mode  = load_mode()
     voted = load_json("voted_status.json")
     if mode == "REAL" and voter_id in voted:
-        print(f"[verify-qr] ALREADY VOTED  voter_id={voter_id[:12]}…")
         return jsonify({"status": "already_voted"}), 200
 
-    print(f"[verify-qr] OK  voter_id={voter_id[:12]}…  name={voter['name']}")
-    return jsonify({
-        "status":     "success",
-        "qr_string":  voter_id,
-        "voter_info": voter,
-    })
+    return jsonify({"status": "success", "qr_string": voter_id, "voter_info": voter})
 
 # ══════════════════════════════════════════════════════════════════════
 #  VERIFY FACE
@@ -410,7 +365,6 @@ _embed_cache: dict = {}
 _embed_lock  = threading.Lock()
 
 def get_stored_embedding(embed_file: str):
-    """Load saved .npy embedding with in-memory cache."""
     with _embed_lock:
         if embed_file in _embed_cache:
             return _embed_cache[embed_file]
@@ -427,7 +381,6 @@ def verify_face():
     data       = request.get_json(silent=True) or {}
     voter_id   = data.get("qr_string", "").strip()
     image_data = data.get("image", "")
-
     if not voter_id or not image_data:
         return jsonify({"status": "invalid_request"}), 400
 
@@ -440,38 +393,24 @@ def verify_face():
     except Exception as e:
         return jsonify({"status": "bad_image", "detail": str(e)}), 400
 
-    # Liveness gate — reject photos/screens before recognition
     is_live, reason = check_liveness(img_live)
     if not is_live:
-        print(f"[verify-face] LIVENESS FAIL  voter_id={voter_id[:12]}…  reason={reason}")
-        return jsonify({
-            "status":  "liveness_failed",
-            "reason":  reason,
-            "message": liveness_message(reason),
-        }), 200
+        return jsonify({"status": "liveness_failed", "reason": reason, "message": liveness_message(reason)}), 200
 
-    # Load stored embedding
     voter      = database[voter_id]
-    embed_file = voter.get("embed_file", voter.get("face_file", "").replace(".jpg", ".npy"))
+    embed_file = voter.get("embed_file", voter.get("face_file","").replace(".jpg",".npy"))
     enc_stored = get_stored_embedding(embed_file)
     if enc_stored is None:
         return jsonify({"status": "no_stored_face"})
 
-    # Get live embedding
-    img_pp   = preprocess_for_face(img_live)
-    enc_live = get_face_embedding(img_pp)
+    enc_live = get_face_embedding(preprocess_for_face(img_live))
     if enc_live is None:
         return jsonify({"status": "no_live_face"})
 
     similarity = embedding_similarity(enc_stored, enc_live)
-    match      = similarity >= 0.40          # cosine threshold (0.40 = good balance)
-    confidence = round(similarity, 4)
+    match      = similarity >= 0.40
     print(f"[verify-face] voter_id={voter_id[:12]}…  similarity={similarity:.4f}  match={match}")
-
-    return jsonify({
-        "status":     "verified" if match else "failed",
-        "confidence": confidence,
-    })
+    return jsonify({"status": "verified" if match else "failed", "confidence": round(similarity, 4)})
 
 # ══════════════════════════════════════════════════════════════════════
 #  GESTURE
@@ -496,7 +435,6 @@ def gesture():
     try:
         result = get_landmarker().detect(mp_image)
     except Exception as e:
-        print(f"[gesture] landmarker error: {e}")
         return jsonify({"status": "error", "detail": str(e)}), 500
 
     if not result.face_landmarks:
@@ -517,12 +455,10 @@ def gesture():
         ear_avg  = round((ear_l + ear_r) / 2.0, 4)
         is_blink = ear_avg <= EAR_BLINK_THRESHOLD
 
-    direction = head_pitch(lm, h)
-    print(f"[gesture] dir={direction} blink={is_blink} ear={ear_avg}")
-    return jsonify({"status": "ok", "direction": direction, "blink": is_blink, "ear": ear_avg})
+    return jsonify({"status": "ok", "direction": head_pitch(lm, h), "blink": is_blink, "ear": ear_avg})
 
 # ══════════════════════════════════════════════════════════════════════
-#  VOTE
+#  VOTE  —  stores in JSON  +  seals in blockchain
 # ══════════════════════════════════════════════════════════════════════
 
 @app.route("/vote", methods=["POST"])
@@ -550,14 +486,53 @@ def vote():
         if mode == "REAL" and voter_id in voted:
             return jsonify({"status": "already_voted"})
 
+        # 1 ── Store in JSON (existing behaviour preserved)
         voted[voter_id] = candidate
         save_json("voted_status.json", voted)
-        print(f"[vote] voter_id={voter_id[:12]}…  candidate={candidate}  mode={mode}")
-        return jsonify({"status": "vote_success", "mode": mode})
+
+        # 2 ── Seal in blockchain (new behaviour)
+        block = vote_chain.add_block(
+            voter_id  = voter_id,
+            candidate = candidate,
+        )
+
+        print(f"[vote] voter_id={voter_id[:12]}…  candidate={candidate}  "
+              f"block=#{block.index}  mode={mode}")
+
+        return jsonify({
+            "status":       "vote_success",
+            "mode":         mode,
+            "block_index":  block.index,
+            "block_hash":   block.hash,
+            "timestamp":    block.timestamp,
+        })
 
     except Exception as e:
         print(f"[vote] error: {e}")
         return jsonify({"status": "server_error"}), 500
+
+# ══════════════════════════════════════════════════════════════════════
+#  BLOCKCHAIN  —  read + verify endpoints
+# ══════════════════════════════════════════════════════════════════════
+
+@app.route("/blockchain")
+def get_blockchain():
+    """Return the full chain."""
+    chain = vote_chain.to_list()
+    return jsonify({
+        "length": len(chain),
+        "chain":  chain,
+    })
+
+@app.route("/blockchain/verify")
+def verify_blockchain():
+    """Verify chain integrity."""
+    is_valid, message = vote_chain.is_chain_valid()
+    return jsonify({
+        "valid":   is_valid,
+        "message": message,
+        "length":  len(vote_chain.chain),
+    })
 
 # ══════════════════════════════════════════════════════════════════════
 #  ADMIN RESULTS
@@ -580,9 +555,10 @@ def admin_results():
         "votes":        votes,
         "gender_stats": gender_stats,
         "system": {
-            "registered":  len(database),
-            "voted":       len(voted),
-            "turnout_pct": round(len(voted) / max(len(database), 1) * 100, 1),
+            "registered":   len(database),
+            "voted":        len(voted),
+            "turnout_pct":  round(len(voted) / max(len(database), 1) * 100, 1),
+            "chain_length": len(vote_chain.chain),
         },
     })
 
@@ -592,17 +568,20 @@ def admin_results():
 
 @app.route("/health")
 def health():
+    is_valid, _ = vote_chain.is_chain_valid()
     return jsonify({
-        "status":     "ok",
-        "mode":       load_mode(),
-        "registered": len(load_json("voter_database.json")),
-        "voted":      len(load_json("voted_status.json")),
-        "landmarker": _landmarker is not None,
-        "face_app":   _face_app is not None,
+        "status":       "ok",
+        "mode":         load_mode(),
+        "registered":   len(load_json("voter_database.json")),
+        "voted":        len(load_json("voted_status.json")),
+        "landmarker":   _landmarker is not None,
+        "face_app":     _face_app is not None,
+        "chain_length": len(vote_chain.chain),
+        "chain_valid":  is_valid,
     })
 
 # ══════════════════════════════════════════════════════════════════════
-#  START  —  Render assigns PORT via environment variable
+#  START
 # ══════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
