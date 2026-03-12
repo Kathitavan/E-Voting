@@ -3,8 +3,7 @@ import Webcam from "react-webcam";
 import { Html5Qrcode } from "html5-qrcode";
 import axios from "axios";
 import "../styles/register.css";
-
-import { API } from "../config/api"
+import { API } from "../config/api";
 
 const API_TIMEOUT = 150000;
 

@@ -3,8 +3,8 @@ import axios from "axios";
 import { useRef, useEffect, useState } from "react";
 import "../styles/face.css";
 import SystemLoader from "../components/SystemLoader";
+import { API } from "../config/api";
 
-import { API } from "../config/api"
 
 // ── FIX BUG 1: raised from 10s → 90s to survive Render cold-start
 const VERIFY_TIMEOUT = 90000;

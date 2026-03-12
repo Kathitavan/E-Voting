@@ -2,8 +2,8 @@ import axios from "axios";
 import { useState } from "react";
 import "../styles/voting.css";
 import SystemLoader from "../components/SystemLoader";
+import { API } from "../config/api";
 
-import { API } from "../config/api"
 
 // ── FIX BUG 6: vote endpoint needs a timeout — Render free can be slow
 const VOTE_TIMEOUT = 60000;

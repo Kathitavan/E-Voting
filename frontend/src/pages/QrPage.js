@@ -2,8 +2,8 @@ import { Html5Qrcode } from "html5-qrcode";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "../styles/qr.css";
+import { API } from "../config/api";
 
-import { API } from "../config/api"
 
 // ── FIX: increased timeout to 90s to handle Render cold-start (was missing entirely)
 const API_TIMEOUT = 90000;

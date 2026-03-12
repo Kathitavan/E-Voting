@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "../styles/voterList.css";
+import { API } from "../config/api";
 
-import { API } from "../config/api"
 
 export default function VoterListPage() {
   const [voters,    setVoters]    = useState([]);
