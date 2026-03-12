@@ -28,5 +28,35 @@
     },
     "previous_hash": "361d6a15be634991222a162c9c751ce3100fd20fe5e2c5659e0266704acc9394",
     "hash": "dad114a51b9c9dabe391ec85af732e92e3fde7f9a637bc54f4e6231f3f0e008d"
+  },
+  {
+    "index": 3,
+    "timestamp": "2026-03-12T14:53:11.567529+00:00",
+    "data": {
+      "voter": "anon:34d8b2c9be3b0e46fbba",
+      "candidate": "TVK"
+    },
+    "previous_hash": "dad114a51b9c9dabe391ec85af732e92e3fde7f9a637bc54f4e6231f3f0e008d",
+    "hash": "4b0ecb17bc1409e38057090c61517e395375a8a952d23189a091d866211943f8"
+  },
+  {
+    "index": 4,
+    "timestamp": "2026-03-12T14:56:37.799620+00:00",
+    "data": {
+      "voter": "anon:34d8b2c9be3b0e46fbba",
+      "candidate": "DMK"
+    },
+    "previous_hash": "4b0ecb17bc1409e38057090c61517e395375a8a952d23189a091d866211943f8",
+    "hash": "fa0accfbd2f718364974a531f78bb285a28494806a283c674057a15b9aaf828a"
+  },
+  {
+    "index": 5,
+    "timestamp": "2026-03-12T15:02:13.303478+00:00",
+    "data": {
+      "voter": "anon:34d8b2c9be3b0e46fbba",
+      "candidate": "TVK"
+    },
+    "previous_hash": "fa0accfbd2f718364974a531f78bb285a28494806a283c674057a15b9aaf828a",
+    "hash": "21229758164622f8088ce7b84224122c8376252ff356283ef4977c8e095539bb"
   }
 ]

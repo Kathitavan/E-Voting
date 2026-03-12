@@ -909,3 +909,67 @@
 .av-card--sel .av-card-name {
   color: rgba(240, 244, 248, 0.88) !important;
 }
+/* ── PASTE THIS AT THE BOTTOM OF accessibleVoting.css ── */
+
+/* Fix oversized short name bleeding over full name */
+.av-card-short {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+  color: #fff !important;
+  line-height: 1.2;
+}
+.av-card--sel .av-card-short {
+  color: var(--green) !important;
+}
+
+/* Full party name — clearly visible */
+.av-card-name {
+  font-size: 13px !important;
+  color: rgba(240, 244, 248, 0.82) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  line-height: 1.4;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Tamil name */
+.av-card-tamil {
+  font-size: 12px !important;
+  color: rgba(240, 244, 248, 0.45) !important;
+  line-height: 1.4;
+}
+
+/* Card height — give more room so nothing overlaps */
+.av-card {
+  padding: 14px 20px 14px 16px !important;
+  min-height: 72px;
+  align-items: center !important;
+}
+
+/* Logo box — fixed size so it doesn't stretch */
+.av-card-logo {
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px !important;
+  flex-shrink: 0 !important;
+  padding: 5px !important;
+  box-sizing: border-box !important;
+}
+.av-card-logo-img,
+.av-card-logo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* Info column — let it breathe */
+.av-card-info {
+  flex: 1;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0;
+  overflow: hidden;
+}
