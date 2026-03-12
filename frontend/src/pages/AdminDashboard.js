@@ -12,10 +12,11 @@ import {
   Tooltip,
   Legend
 } from "chart.js"
+import { API } from "../config/api"
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-const API = "https://e-voting-backend-zmxj.onrender.com"
+
 
 const PARTY_COLORS = [
   "#FF9933", "#138808", "#000080", "#f87171",

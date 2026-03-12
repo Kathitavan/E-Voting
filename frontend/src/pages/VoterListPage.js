@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "../styles/voterList.css";
 
-const API = "https://e-voting-backend-zmxj.onrender.com";
+import { API } from "../config/api"
 
 export default function VoterListPage() {
   const [voters,    setVoters]    = useState([]);

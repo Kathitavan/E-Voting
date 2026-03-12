@@ -4,7 +4,7 @@ import "./blockchainExplorer.css";
 //   OR adjust the import path to match your project structure,
 //   e.g. "../styles/blockchainExplorer.css"
 
-const API = process.env.REACT_APP_API_URL || "https://e-voting-backend-zmxj.onrender.com";
+import { API } from "../config/api"
 
 // ── Helpers ──────────────────────────────────────────────────────────
 

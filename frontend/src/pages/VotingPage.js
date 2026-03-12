@@ -3,7 +3,7 @@ import { useState } from "react";
 import "../styles/voting.css";
 import SystemLoader from "../components/SystemLoader";
 
-const API = "https://e-voting-backend-zmxj.onrender.com";
+import { API } from "../config/api"
 
 // ── FIX BUG 6: vote endpoint needs a timeout — Render free can be slow
 const VOTE_TIMEOUT = 60000;

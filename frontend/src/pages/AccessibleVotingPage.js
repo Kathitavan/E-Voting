@@ -8,7 +8,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import SystemLoader from "../components/SystemLoader";
 import "../styles/accessibleVoting.css";
 
-const API             = "https://e-voting-backend-zmxj.onrender.com";
+import { API } from "../config/api"
 const POLL_MS         = 300;     // ── FIX: was 80ms (12.5fps overloading slow server)
                                  //    300ms = ~3fps, enough for gesture + gives server breathing room
 const BLINK_HOLD_MS   = 1000;

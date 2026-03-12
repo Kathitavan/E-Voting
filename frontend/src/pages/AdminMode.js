@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "../styles/adminMode.css";
 
-const API = "https://e-voting-backend-zmxj.onrender.com";
+import { API } from "../config/api"
 
 export default function AdminMode() {
   const [mode,    setMode]    = useState("TEST");

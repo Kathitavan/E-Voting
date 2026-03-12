@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import "../styles/face.css";
 import SystemLoader from "../components/SystemLoader";
 
-const API = "https://e-voting-backend-zmxj.onrender.com";
+import { API } from "../config/api"
 
 // ── FIX BUG 1: raised from 10s → 90s to survive Render cold-start
 const VERIFY_TIMEOUT = 90000;

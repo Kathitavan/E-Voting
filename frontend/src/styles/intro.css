@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Outfit:wght@300;400;600&display=swap');
+
+:root {
+  --gold: #ffcc00;
+  --gold-dim: rgba(255, 204, 0, 0.1);
+  --bg: #050505;
+  --panel: rgba(20, 20, 20, 0.8);
+  --border: rgba(255, 204, 0, 0.2);
+}
+
+.intro-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding: 4vh;
+  overflow: hidden;
+  z-index: 10000;
+}
+
+/* Exit Animation */
+.intro-screen.fade-out {
+  opacity: 0;
+  filter: blur(20px);
+  transition: all 1.2s cubic-bezier(0.7, 0, 0.3, 1);
+}
+
+/* Background Decoration */
+.bg-flare {
+  position: absolute;
+  top: -10%; left: -10%;
+  width: 40%; height: 40%;
+  background: radial-gradient(circle, rgba(255, 204, 0, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Layout Blocks */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  grid-template-rows: auto 1fr;
+  gap: 3vh;
+  height: 100%;
+}
+
+.brand-block {
+  grid-column: span 2;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.title-main {
+  font-family: 'Syncopate', sans-serif;
+  font-size: 6vh;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -2px;
+  background: linear-gradient(to right, #fff, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px; /* Industrial sharp edges */
+  padding: 3vh;
+  position: relative;
+}
+
+.panel-label {
+  position: absolute;
+  top: -10px; left: 20px;
+  background: var(--bg);
+  padding: 0 10px;
+  font-family: 'Syncopate', sans-serif;
+  font-size: 1vh;
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+
+/* Team Section */
+.team-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2vh;
+}
+
+.member-box {
+  display: flex;
+  align-items: center;
+  gap: 1.5vh;
+}
+
+.member-img {
+  width: 7vh; height: 7vh;
+  object-fit: cover;
+  border: 1px solid var(--gold);
+  filter: grayscale(100%) contrast(1.1);
+}
+
+/* Workflow Section */
+.flow-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.flow-step {
+  display: flex;
+  gap: 2vh;
+}
+
+.step-num {
+  font-family: 'Syncopate', sans-serif;
+  font-size: 2vh;
+  color: var(--gold);
+}
+
+.step-content b {
+  display: block;
+  font-size: 1.8vh;
+  color: #fff;
+  margin-bottom: 0.5vh;
+}
+
+.step-content p {
+  font-size: 1.4vh;
+  color: #888;
+  margin: 0;
+}
+
+/* Loader bar */
+.loader-track {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin-top: 2vh;
+}
+
+.loader-bar {
+  height: 100%;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+  animation: grow 8s linear forwards;
+}
+
+@keyframes grow { from { width: 0; } to { width: 100%; } }

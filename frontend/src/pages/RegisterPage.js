@@ -4,7 +4,8 @@ import { Html5Qrcode } from "html5-qrcode";
 import axios from "axios";
 import "../styles/register.css";
 
-const API         = "https://e-voting-backend-zmxj.onrender.com";
+import { API } from "../config/api"
+
 const API_TIMEOUT = 150000;
 
 export default function RegisterPage() {
