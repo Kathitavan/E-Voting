@@ -706,6 +706,116 @@ def health():
     })
 
 # ══════════════════════════════════════════════════════════════════════
+#  ADMIN — VOTER LIST
+#  Returns all registered voters with their voted status
+#  GET /admin/voters
+# ══════════════════════════════════════════════════════════════════════
+
+@app.route("/admin/voters")
+def admin_voters():
+    database = load_json("voter_database.json")
+    voted    = load_json("voted_status.json")
+
+    voters = []
+    for voter_id, info in database.items():
+        voters.append({
+            "voter_id":    voter_id,
+            "name":        info.get("name", "Unknown"),
+            "gender":      info.get("gender", "unknown"),
+            "age":         info.get("age", "N/A"),
+            "has_voted":   voter_id in voted,
+            "voted_for":   voted.get(voter_id, None),
+            "qr_type":     info.get("qr_type", "raw"),
+        })
+
+    # Sort: voted first, then alphabetical by name
+    voters.sort(key=lambda v: (not v["has_voted"], v["name"].lower()))
+
+    return jsonify({
+        "total":      len(voters),
+        "voted":      sum(1 for v in voters if v["has_voted"]),
+        "not_voted":  sum(1 for v in voters if not v["has_voted"]),
+        "voters":     voters,
+    })
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  ADMIN — DELETE VOTER
+#  Removes voter from database, deletes face files, removes vote record
+#  DELETE /admin/voters/<voter_id>
+# ══════════════════════════════════════════════════════════════════════
+
+@app.route("/admin/voters/<voter_id>", methods=["DELETE"])
+def delete_voter(voter_id):
+    database = load_json("voter_database.json")
+
+    if voter_id not in database:
+        return jsonify({"status": "not_found"}), 404
+
+    voter = database[voter_id]
+
+    # Remove face image and embedding files
+    for key in ("face_file", "embed_file"):
+        fname = voter.get(key)
+        if fname:
+            path = f"voters/{fname}"
+            if os.path.exists(path):
+                os.remove(path)
+                print(f"[delete_voter] Removed {path}")
+
+    # Remove from embedding cache
+    embed_file = voter.get("embed_file", "")
+    with _embed_lock:
+        _embed_cache.pop(embed_file, None)
+
+    # Remove from database
+    del database[voter_id]
+    save_json("voter_database.json", database)
+
+    # Remove from voted status if present
+    voted = load_json("voted_status.json")
+    if voter_id in voted:
+        del voted[voter_id]
+        save_json("voted_status.json", voted)
+
+    print(f"[delete_voter] Deleted voter_id={voter_id[:12]}…  name={voter.get('name')}")
+    return jsonify({"status": "deleted", "name": voter.get("name")})
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  ADMIN — RESET VOTE
+#  Clears a voter's vote so they can vote again (TEST mode only)
+#  POST /admin/voters/<voter_id>/reset-vote
+# ══════════════════════════════════════════════════════════════════════
+
+@app.route("/admin/voters/<voter_id>/reset-vote", methods=["POST"])
+def reset_vote(voter_id):
+    mode = load_mode()
+    if mode == "REAL":
+        return jsonify({
+            "status":  "forbidden",
+            "message": "Vote reset is not allowed in REAL mode.",
+        }), 403
+
+    database = load_json("voter_database.json")
+    if voter_id not in database:
+        return jsonify({"status": "not_found"}), 404
+
+    voted = load_json("voted_status.json")
+    if voter_id not in voted:
+        return jsonify({"status": "not_voted"})
+
+    del voted[voter_id]
+    save_json("voted_status.json", voted)
+
+    name = database[voter_id].get("name", "Unknown")
+    print(f"[reset_vote] Reset vote for voter_id={voter_id[:12]}…  name={name}")
+    return jsonify({"status": "reset", "name": name})
+
+@app.route("/ping")
+def ping():
+    return jsonify({"status": "awake"})
+# ══════════════════════════════════════════════════════════════════════
 #  START
 # ══════════════════════════════════════════════════════════════════════
 

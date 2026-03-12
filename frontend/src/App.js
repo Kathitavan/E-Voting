@@ -54,6 +54,15 @@ function App() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
+  // ── Keep Render backend alive — ping every 4 minutes
+useEffect(() => {
+  const ping = () =>
+    fetch("https://e-voting-backend-zmxj.onrender.com/health").catch(() => {});
+  ping(); // ping immediately on page load
+  const interval = setInterval(ping, 4 * 60 * 1000); // then every 4 min
+  return () => clearInterval(interval);
+}, []);
+
   const logoutAdmin  = () => { setAdminAuth(false); setStep("qr"); setError(null); };
   const triggerError = (code) => setError({ code });
   const clearError   = ()     => setError(null);

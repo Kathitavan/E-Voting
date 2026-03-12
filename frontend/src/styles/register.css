@@ -565,3 +565,161 @@
   .rg-actions-row { flex-direction: column; }
   .rg-btn-back    { width: 100%; text-align: center; }
 }
+
+/* ═══════════════════════════════════════════════════
+   APPEND THIS ENTIRE BLOCK TO THE BOTTOM OF register.css
+═══════════════════════════════════════════════════ */
+
+/* ── WAKE-UP SCREEN ── */
+.rg-wake-screen {
+  min-height: 80vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px; padding: 40px 24px; text-align: center;
+}
+.rg-wake-spinner {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 3px solid rgba(255,153,51,0.15);
+  border-top-color: #FF9933;
+  animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.rg-wake-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 26px; font-weight: 700; color: #f1f5f9;
+}
+.rg-wake-msg {
+  font-size: 15px; color: rgba(241,245,249,0.65);
+  max-width: 360px; line-height: 1.5;
+}
+.rg-wake-sub {
+  font-size: 12px; color: rgba(241,245,249,0.35);
+  max-width: 340px; line-height: 1.6;
+}
+.rg-wake-timer {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px; color: rgba(255,153,51,0.5);
+}
+.rg-wake-bar {
+  width: 220px; height: 4px; border-radius: 100px;
+  background: rgba(255,255,255,0.06); overflow: hidden;
+}
+.rg-wake-bar-fill {
+  height: 100%; border-radius: 100px;
+  background: linear-gradient(90deg, #FF9933, #138808);
+  animation: wakeProgress 8s ease-in-out infinite alternate;
+}
+@keyframes wakeProgress {
+  from { width: 5%; }
+  to   { width: 95%; }
+}
+
+/* ── PERMANENT ERROR BOX ── */
+.rg-error-box {
+  position: fixed;
+  top: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 300;
+  width: min(520px, 92vw);
+  background: #1a0a0a;
+  border: 1.5px solid rgba(239,68,68,0.5);
+  border-radius: 14px;
+  box-shadow: 0 8px 40px rgba(239,68,68,0.15), 0 2px 12px rgba(0,0,0,0.5);
+  animation: errorSlide .3s ease;
+  overflow: hidden;
+}
+@keyframes errorSlide {
+  from { opacity:0; transform: translateX(-50%) translateY(-12px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+}
+.rg-error-box-content {
+  padding: 16px 18px 12px;
+  color: #fca5a5;
+  font-size: 14px; line-height: 1.6;
+  max-height: 260px; overflow-y: auto;
+}
+.rg-error-box-close {
+  width: 100%; padding: 10px;
+  background: rgba(239,68,68,0.1);
+  border: none; border-top: 1px solid rgba(239,68,68,0.2);
+  color: #f87171; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background .2s;
+}
+.rg-error-box-close:hover { background: rgba(239,68,68,0.2); }
+
+/* ── SUCCESS POPUP ── */
+.rg-success-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.82);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 400; backdrop-filter: blur(6px);
+  animation: overlayIn .3s ease;
+}
+@keyframes overlayIn { from{opacity:0} to{opacity:1} }
+
+.rg-success-dialog {
+  background: #0d1520;
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 24px; padding: 36px 32px;
+  max-width: 400px; width: 90%; text-align: center;
+  box-shadow: 0 0 60px rgba(34,197,94,0.12), 0 24px 64px rgba(0,0,0,0.6);
+  animation: dialogPop .4s cubic-bezier(0.22,1,0.36,1);
+  display: flex; flex-direction: column; gap: 18px;
+}
+@keyframes dialogPop {
+  from { opacity:0; transform: scale(0.88) translateY(20px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.rg-success-icon { display: flex; justify-content: center; }
+.rg-success-svg  { width: 80px; height: 80px; }
+.rg-success-ring {
+  fill: none; stroke: rgba(34,197,94,0.2); stroke-width: 3;
+}
+.rg-success-check {
+  fill: none; stroke: #22c55e; stroke-width: 4;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 60; stroke-dashoffset: 60;
+  animation: drawCheck .5s ease .2s forwards;
+}
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+.rg-success-title {
+  font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700;
+  background: linear-gradient(135deg, #22c55e, #86efac);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.rg-success-sub { font-size: 13px; color: rgba(241,245,249,0.45); margin-top: -10px; }
+
+.rg-success-card {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 16px; text-align: left;
+}
+.rg-success-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(34,197,94,0.12); border: 2px solid rgba(34,197,94,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: #22c55e; flex-shrink: 0;
+}
+.rg-success-name { font-size: 16px; font-weight: 600; color: #f1f5f9; }
+.rg-success-meta { font-size: 12px; color: rgba(241,245,249,0.45); margin-top: 2px; text-transform: capitalize; }
+.rg-success-id   { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(34,197,94,0.7); margin-top: 4px; }
+
+.rg-success-badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.rg-success-badge  { padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 500; }
+.rg-success-badge--green  { background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.3);  color: #22c55e; }
+.rg-success-badge--blue   { background: rgba(65,105,225,0.1); border: 1px solid rgba(65,105,225,0.3); color: #93c5fd; }
+.rg-success-badge--purple { background: rgba(167,139,250,0.1);border: 1px solid rgba(167,139,250,0.3);color: #c4b5fd; }
+
+.rg-success-btn {
+  width: 100%; padding: 14px; border-radius: 12px;
+  border: 1.5px solid rgba(34,197,94,0.45);
+  background: rgba(34,197,94,0.1); color: #22c55e;
+  font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700;
+  cursor: pointer; transition: background .2s, box-shadow .2s;
+}
+.rg-success-btn:hover {
+  background: rgba(34,197,94,0.2);
+  box-shadow: 0 0 24px rgba(34,197,94,0.25);
+}
