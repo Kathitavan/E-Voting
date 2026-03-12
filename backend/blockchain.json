@@ -58,5 +58,25 @@
     },
     "previous_hash": "fa0accfbd2f718364974a531f78bb285a28494806a283c674057a15b9aaf828a",
     "hash": "21229758164622f8088ce7b84224122c8376252ff356283ef4977c8e095539bb"
+  },
+  {
+    "index": 6,
+    "timestamp": "2026-03-12T15:51:50.221907+00:00",
+    "data": {
+      "voter": "anon:34d8b2c9be3b0e46fbba",
+      "candidate": "TVK"
+    },
+    "previous_hash": "21229758164622f8088ce7b84224122c8376252ff356283ef4977c8e095539bb",
+    "hash": "b65dd8c7210d04f2b5c73f16d83ee3c15272285f8550124ef6e12881304d8481"
+  },
+  {
+    "index": 7,
+    "timestamp": "2026-03-12T16:04:42.631159+00:00",
+    "data": {
+      "voter": "anon:e0687712d312ac6699bc",
+      "candidate": "TVK"
+    },
+    "previous_hash": "b65dd8c7210d04f2b5c73f16d83ee3c15272285f8550124ef6e12881304d8481",
+    "hash": "24f702895b134a5dcdb1bba59cf3737e779a881182e990ddbc7ba8662d27f3b2"
   }
 ]

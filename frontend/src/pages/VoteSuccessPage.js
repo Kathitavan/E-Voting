@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import "../styles/success.css";
 
-const COUNTDOWN_SEC = 6;
+const COUNTDOWN_SEC = 8;
 
-export default function VoteSuccessPage({ setStep }) {
-  const [count,    setCount]    = useState(COUNTDOWN_SEC);
-  const [ripple,   setRipple]   = useState(false);
+export default function VoteSuccessPage({ setStep, user }) {
+  const [count,  setCount]  = useState(COUNTDOWN_SEC);
+  const [ripple, setRipple] = useState(false);
 
-  /* countdown + auto-redirect */
   useEffect(() => {
     setRipple(true);
     const tick = setInterval(() => {
@@ -20,7 +19,20 @@ export default function VoteSuccessPage({ setStep }) {
     return () => { clearInterval(tick); clearTimeout(redirect); };
   }, [setStep]);
 
-  const dashOffset = 2 * Math.PI * 40 * (1 - count / COUNTDOWN_SEC); // SVG ring
+  const dashOffset = 2 * Math.PI * 40 * (1 - count / COUNTDOWN_SEC);
+
+  // Pull blockchain info from user object (set by VotingPage after /vote response)
+  const blockIndex = user?.block_index ?? null;
+  const blockHash  = user?.block_hash  ?? null;
+  const timestamp  = user?.timestamp   ?? null;
+
+  const shortHash = blockHash
+    ? `${blockHash.slice(0, 10)}…${blockHash.slice(-8)}`
+    : null;
+
+  const formattedTime = timestamp
+    ? new Date(timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    : null;
 
   return (
     <div className="vs-root">
@@ -30,20 +42,20 @@ export default function VoteSuccessPage({ setStep }) {
         <div className="vs-s"/><div className="vs-w"/><div className="vs-g"/>
       </div>
 
-      {/* Confetti particles */}
+      {/* Confetti */}
       <div className="vs-confetti" aria-hidden="true">
         {Array.from({ length: 24 }).map((_, i) => (
-          <div key={i} className={`vs-particle vs-particle--${i % 3 === 0 ? "s" : i % 3 === 1 ? "g" : "b"}`}
+          <div key={i}
+            className={`vs-particle vs-particle--${i % 3 === 0 ? "s" : i % 3 === 1 ? "g" : "b"}`}
             style={{
-              left:             `${(i * 4.1 + 2) % 100}%`,
-              animationDelay:   `${(i * 0.18) % 2.4}s`,
-              animationDuration:`${1.8 + (i % 5) * 0.3}s`,
+              left:              `${(i * 4.1 + 2) % 100}%`,
+              animationDelay:    `${(i * 0.18) % 2.4}s`,
+              animationDuration: `${1.8 + (i % 5) * 0.3}s`,
             }}
           />
         ))}
       </div>
 
-      {/* Glow rings */}
       <div className={`vs-glow-ring${ripple ? " vs-glow-ring--active" : ""}`} />
       <div className={`vs-glow-ring vs-glow-ring--2${ripple ? " vs-glow-ring--active" : ""}`} />
 
@@ -59,16 +71,14 @@ export default function VoteSuccessPage({ setStep }) {
           <div className="vs-check-icon">✓</div>
         </div>
 
-        {/* Text */}
         <div className="vs-text-block">
           <h1 className="vs-title">Vote Recorded!</h1>
           <p className="vs-body">
-            Your vote has been securely encrypted and counted.
+            Your vote has been securely encrypted and sealed on the blockchain.
             Thank you for participating in India's democracy.
           </p>
         </div>
 
-        {/* Tricolor divider */}
         <div className="vs-divider">
           <div className="vs-div-s"/><div className="vs-div-w"/><div className="vs-div-g"/>
         </div>
@@ -81,8 +91,8 @@ export default function VoteSuccessPage({ setStep }) {
           </div>
           <div className="vs-stat-sep"/>
           <div className="vs-stat">
-            <span className="vs-stat-icon">✅</span>
-            <span className="vs-stat-label">Counted</span>
+            <span className="vs-stat-icon">⛓</span>
+            <span className="vs-stat-label">Blockchain</span>
           </div>
           <div className="vs-stat-sep"/>
           <div className="vs-stat">
@@ -91,11 +101,42 @@ export default function VoteSuccessPage({ setStep }) {
           </div>
         </div>
 
+        {/* ── Blockchain receipt ── */}
+        {blockHash && (
+          <div className="vs-receipt">
+            <div className="vs-receipt__title">
+              <span className="vs-receipt__chain-icon">⛓</span>
+              Blockchain Receipt
+            </div>
+            <div className="vs-receipt__rows">
+              {blockIndex !== null && (
+                <div className="vs-receipt__row">
+                  <span className="vs-receipt__key">Block</span>
+                  <span className="vs-receipt__val vs-receipt__val--gold">#{blockIndex}</span>
+                </div>
+              )}
+              <div className="vs-receipt__row">
+                <span className="vs-receipt__key">Hash</span>
+                <span className="vs-receipt__val vs-receipt__val--mono">{shortHash}</span>
+              </div>
+              {formattedTime && (
+                <div className="vs-receipt__row">
+                  <span className="vs-receipt__key">Sealed at</span>
+                  <span className="vs-receipt__val">{formattedTime}</span>
+                </div>
+              )}
+            </div>
+            <div className="vs-receipt__note">
+              🔍 Verify your vote in the Blockchain Explorer
+            </div>
+          </div>
+        )}
+
         {/* Countdown ring */}
         <div className="vs-countdown">
           <div className="vs-cd-wrap">
             <svg width="96" height="96" viewBox="0 0 96 96">
-              <circle className="vs-cd-track"  cx="48" cy="48" r="40" />
+              <circle className="vs-cd-track" cx="48" cy="48" r="40" />
               <circle
                 className="vs-cd-fill"
                 cx="48" cy="48" r="40"
@@ -115,17 +156,14 @@ export default function VoteSuccessPage({ setStep }) {
           <p className="vs-cd-label">Returning to home screen…</p>
         </div>
 
-        {/* Manual return */}
         <button className="vs-btn" onClick={() => setStep("qr")}>
           Return to Home Now →
         </button>
 
       </div>
 
-      {/* Emblem */}
       <div className="vs-emblem">🇮🇳</div>
 
-      {/* Bottom stripe */}
       <div className="vs-stripe vs-stripe--btm">
         <div className="vs-s"/><div className="vs-w"/><div className="vs-g"/>
       </div>

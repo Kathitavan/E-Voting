@@ -606,3 +606,255 @@ body {
 .page-content > * {
   animation: page-in 0.4s var(--ease) both;
 }
+
+/* ── PASTE AT BOTTOM OF app.css ── */
+
+.app-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.25);
+}
+
+.app-footer__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.4px;
+}
+
+.app-footer__sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: inline-block;
+}
+
+/* ── Founder strip ── */
+.app-footer__founder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 18px;
+  border-radius: 100px;
+  background: linear-gradient(135deg, rgba(212,168,67,0.08), rgba(212,168,67,0.04));
+  border: 1px solid rgba(212,168,67,0.2);
+  animation: founderGlow 3s ease-in-out infinite;
+}
+
+@keyframes founderGlow {
+  0%, 100% { border-color: rgba(212,168,67,0.2); box-shadow: none; }
+  50%       { border-color: rgba(212,168,67,0.45); box-shadow: 0 0 18px rgba(212,168,67,0.1); }
+}
+
+.app-footer__founder-label {
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(212,168,67,0.55);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.app-footer__founder-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d4a843;
+  letter-spacing: 0.5px;
+  font-family: 'Rajdhani', 'DM Sans', sans-serif;
+}
+
+.app-footer__founder-badge {
+  font-size: 10px;
+  color: rgba(212,168,67,0.6);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(212,168,67,0.08);
+  border: 1px solid rgba(212,168,67,0.15);
+  letter-spacing: 0.3px;
+}
+
+
+ 
+/* ════════════════════════════════════════
+   PASTE AT BOTTOM OF app.css
+════════════════════════════════════════ */
+ 
+/* Admin login modal overlay */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn .18s ease;
+}
+@keyframes fadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+ 
+.admin-modal {
+  background: #0d1117;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  padding: 36px 40px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: slideUp .25s cubic-bezier(.22,1,.36,1);
+}
+@keyframes slideUp {
+  from { transform: translateY(20px) scale(.97); opacity:0; }
+  to   { transform: translateY(0)    scale(1);   opacity:1; }
+}
+ 
+.admin-modal__icon { font-size: 36px; }
+ 
+.admin-modal__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: .3px;
+}
+.admin-modal__sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  margin: 0;
+  text-align: center;
+}
+ 
+.admin-modal__input {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+.admin-modal__input:focus {
+  border-color: rgba(212,168,67,0.5);
+}
+ 
+.admin-modal__err {
+  font-size: 12px;
+  color: #f87171;
+  width: 100%;
+  text-align: center;
+}
+ 
+.admin-modal__btns {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+.admin-modal__cancel {
+  flex: 1;
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.admin-modal__cancel:hover { background: rgba(255,255,255,0.05); }
+ 
+.admin-modal__submit {
+  flex: 2;
+  padding: 10px;
+  border-radius: 9px;
+  border: none;
+  background: linear-gradient(135deg, #d4a843, #f0c96a);
+  color: #0a0800;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.admin-modal__submit:hover    { opacity: .88; }
+.admin-modal__submit:disabled { opacity: .45; cursor: not-allowed; }
+ 
+/* Footer */
+.app-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.25);
+}
+.app-footer__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: .4px;
+}
+.app-footer__sep {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: inline-block;
+}
+.app-footer__founder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 18px;
+  border-radius: 100px;
+  background: linear-gradient(135deg, rgba(212,168,67,.08), rgba(212,168,67,.04));
+  border: 1px solid rgba(212,168,67,.2);
+  animation: founderGlow 3s ease-in-out infinite;
+}
+@keyframes founderGlow {
+  0%,100% { border-color: rgba(212,168,67,.2); box-shadow: none; }
+  50%      { border-color: rgba(212,168,67,.45); box-shadow: 0 0 18px rgba(212,168,67,.1); }
+}
+.app-footer__founder-label {
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(212,168,67,.55);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.app-footer__founder-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d4a843;
+  letter-spacing: .5px;
+}
+.app-footer__founder-badge {
+  font-size: 10px;
+  color: rgba(212,168,67,.6);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(212,168,67,.08);
+  border: 1px solid rgba(212,168,67,.15);
+}
+ 

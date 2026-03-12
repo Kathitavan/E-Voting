@@ -53,27 +53,71 @@ export default function VotingPage({ user, setStep }) {
     setConfirm(true);
   };
 
-  const castVote = async () => {
-    setConfirm(false);
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `${API}/vote`,
-        { qr_string: user.qr_string, candidate: selected.short },
-        { timeout: VOTE_TIMEOUT }
-      );
-      const status = res.data.status;
-      if      (status === "vote_success")  setStep("success");
-      else if (status === "already_voted") { showToast("You have already voted", "warn"); setTimeout(() => setStep("qr"), 2500); }
-      else    showToast("Vote could not be recorded — please try again");
-    } catch (err) {
-      if (err.code === "ECONNABORTED") showToast("Server timeout — please try again", "error");
-      else showToast("Backend connection error");
-    } finally {
-      setLoading(false);
-    }
-  };
+const castVote = async () => {
 
+  setConfirm(false);
+  setLoading(true);
+
+  try {
+
+    const res = await axios.post(
+      `${API}/vote`,
+      {
+        qr_string: user.qr_string,
+        candidate: selected.short
+      },
+      { timeout: VOTE_TIMEOUT }
+    );
+
+    const status = res.data.status;
+
+    if (status === "vote_success") {
+
+      // Pass blockchain receipt to VoteSuccessPage
+      if (user) {
+        user.block_index = res.data.block_index;
+        user.block_hash  = res.data.block_hash;
+        user.timestamp   = res.data.timestamp;
+      }
+
+      setStep("success");
+
+    }
+
+    else if (status === "already_voted") {
+
+      showToast("You have already voted", "warn");
+      setTimeout(() => setStep("qr"), 2500);
+
+    }
+
+    else {
+
+      showToast("Vote could not be recorded — please try again");
+
+    }
+
+  }
+
+  catch (err) {
+
+    if (err.code === "ECONNABORTED") {
+      showToast("Server timeout — please try again", "error");
+    }
+
+    else {
+      showToast("Backend connection error");
+    }
+
+  }
+
+  finally {
+
+    setLoading(false);
+
+  }
+
+};
   if (loading) return <SystemLoader message="Recording your vote securely…" />;
 
   return (

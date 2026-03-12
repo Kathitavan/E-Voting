@@ -143,7 +143,14 @@ export default function AccessibleVotingPage({ user, setStep }) {
         { qr_string: user.qr_string, candidate: candidate.short },
         { timeout: 60000 }
       );
-      if      (res.data.status === "vote_success")  setStep("success");
+            if (res.data.status === "vote_success") {
+        if (user) {
+          user.block_index = res.data.block_index;
+          user.block_hash  = res.data.block_hash;
+          user.timestamp   = res.data.timestamp;
+        }
+        setStep("success");
+      }
       else if (res.data.status === "already_voted") { alert("Already voted."); setStep("qr"); }
       else    { alert("Vote failed. Try again."); setLoading(false); }
     } catch {

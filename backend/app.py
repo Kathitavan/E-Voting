@@ -815,6 +815,74 @@ def reset_vote(voter_id):
 @app.route("/ping")
 def ping():
     return jsonify({"status": "awake"})
+
+# ══════════════════════════════════════════════════════════════════════
+#  ADMIN LOGIN  —  replaces hardcoded "admin123" in App.js
+#  POST /admin/login   { "password": "..." }
+#  Returns { "status": "ok", "token": "<64-hex>" }  on success
+#  Token is valid for 8 hours, stored server-side in memory.
+#  Frontend stores token in sessionStorage (clears on tab close).
+# ══════════════════════════════════════════════════════════════════════
+
+import secrets, time
+
+# ── Set your real password here (or use env var) ──────────────────────
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "SecureVote@2025")
+
+_tokens: dict = {}   # token → expiry_timestamp
+_token_lock = threading.Lock()
+TOKEN_TTL   = 8 * 60 * 60   # 8 hours in seconds
+
+def _issue_token() -> str:
+    token = secrets.token_hex(32)
+    with _token_lock:
+        _tokens[token] = time.time() + TOKEN_TTL
+    return token
+
+def _verify_token(token: str) -> bool:
+    with _token_lock:
+        exp = _tokens.get(token)
+        if exp is None:
+            return False
+        if time.time() > exp:
+            del _tokens[token]
+            return False
+        return True
+
+def _require_admin():
+    """Call at the top of any admin route. Returns error response or None."""
+    token = request.headers.get("X-Admin-Token", "")
+    if not _verify_token(token):
+        return jsonify({"status": "unauthorized"}), 401
+    return None
+
+@app.route("/admin/login", methods=["POST","OPTIONS"])
+def admin_login():
+
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
+
+    data = request.get_json(silent=True) or {}
+    pw   = data.get("password", "")
+
+    if not secrets.compare_digest(pw, ADMIN_PASSWORD):
+        return jsonify({"status": "wrong_password"}), 401
+
+    token = _issue_token()
+
+    print("[admin] Login successful — token issued")
+
+    return jsonify({
+        "status": "ok",
+        "token": token
+    })
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    token = request.headers.get("X-Admin-Token", "")
+    with _token_lock:
+        _tokens.pop(token, None)
+    return jsonify({"status": "logged_out"})
 # ══════════════════════════════════════════════════════════════════════
 #  START
 # ══════════════════════════════════════════════════════════════════════
