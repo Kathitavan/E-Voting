@@ -16,6 +16,7 @@ import ErrorPage, { Error404, ErrorOffline } from "./pages/Errorpage";
 import IntroScreen from "./components/IntroScreen";
 
 import "./styles/app.css";
+import { API } from "./config/api";
 
 const PROGRESS_STEPS  = ["qr", "details", "face", "mode", "voting", "accessible"];
 const ALL_VALID_STEPS = [...PROGRESS_STEPS, "success", "dashboard", "admin-mode", "register", "voters"];
@@ -82,7 +83,7 @@ function App() {
   useEffect(() => {
 
     const ping = () =>
-      fetch("https://e-voting-backend-zmxj.onrender.com/health").catch(() => {});
+      fetch(`${API}/health`).catch(() => {});
 
     ping();
 

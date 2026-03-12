@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import "../styles/adminDashboard.css"
 import SystemLoader from "../components/SystemLoader"
+import BlockchainExplorer from "./BlockchainExplorer"
 import { Pie, Bar } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -16,21 +17,20 @@ import { API } from "../config/api"
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-
-
 const PARTY_COLORS = [
   "#FF9933", "#138808", "#000080", "#f87171",
   "#a78bfa", "#34d399", "#fbbf24", "#60a5fa", "#f472b6", "#2dd4bf"
 ]
 
 export default function AdminDashboard() {
-  const [results,    setResults]    = useState({})
-  const [gender,     setGender]     = useState({})
-  const [stats,      setStats]      = useState({})
-  const [lastUpdate, setLastUpdate] = useState("")
-  const [loading,    setLoading]    = useState(true)
-  const [error,      setError]      = useState(false)
-  const [pulse,      setPulse]      = useState(false)
+  const [results,         setResults]         = useState({})
+  const [gender,          setGender]          = useState({})
+  const [stats,           setStats]           = useState({})
+  const [lastUpdate,      setLastUpdate]      = useState("")
+  const [loading,         setLoading]         = useState(true)
+  const [error,           setError]           = useState(false)
+  const [pulse,           setPulse]           = useState(false)
+  const [showBlockchain,  setShowBlockchain]  = useState(false)  // ← NEW
 
   useEffect(() => {
     fetchData()
@@ -52,6 +52,11 @@ export default function AdminDashboard() {
       console.log("Dashboard Error", err)
       setError(true)
     }
+  }
+
+  // ── Show Blockchain Explorer ── ← NEW
+  if (showBlockchain) {
+    return <BlockchainExplorer onBack={() => setShowBlockchain(false)} />
   }
 
   const totalVotes  = Object.values(results).reduce((a, b) => a + b, 0)
@@ -135,6 +140,15 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="ad-header-right">
+
+          {/* ── Blockchain Explorer button ── ← NEW */}
+          <button
+            className="ad-blockchain-btn"
+            onClick={() => setShowBlockchain(true)}
+          >
+            ⛓ Blockchain Explorer
+          </button>
+
           <div className={`ad-live-badge${pulse ? " ad-live-badge--pulse" : ""}`}>
             <span className="ad-live-dot" />
             LIVE
@@ -185,7 +199,6 @@ export default function AdminDashboard() {
       {/* ── Turnout + Leader ── */}
       <section className="ad-highlight-row">
 
-        {/* Turnout */}
         <div className="ad-turnout-card">
           <div className="ad-turnout-top">
             <span className="ad-section-label">Voter Turnout</span>
@@ -200,7 +213,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Leader */}
         {leader ? (
           <div className="ad-leader-card">
             <span className="ad-section-label">Currently Leading</span>
@@ -222,6 +234,22 @@ export default function AdminDashboard() {
           </div>
         )}
 
+      </section>
+
+      {/* ── Blockchain summary strip ── ← NEW */}
+      <section className="ad-chain-strip">
+        <div className="ad-chain-strip-inner">
+          <span className="ad-chain-icon">⛓</span>
+          <div className="ad-chain-text">
+            <span className="ad-chain-title">Blockchain Audit Trail</span>
+            <span className="ad-chain-sub">
+              {(stats?.chain_length || 1) - 1} vote{(stats?.chain_length || 1) - 1 !== 1 ? "s" : ""} sealed · {stats?.chain_length || 1} blocks total
+            </span>
+          </div>
+          <button className="ad-chain-view-btn" onClick={() => setShowBlockchain(true)}>
+            View Ledger →
+          </button>
+        </div>
       </section>
 
       {/* ── Party Results ── */}
@@ -272,7 +300,6 @@ export default function AdminDashboard() {
       {/* ── Gender + Charts ── */}
       <section className="ad-bottom-grid">
 
-        {/* Gender */}
         <div className="ad-gender-card">
           <h2 className="ad-section-title">
             <span className="ad-section-accent" />
@@ -298,7 +325,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Pie chart */}
         <div className="ad-chart-card">
           <h2 className="ad-section-title">
             <span className="ad-section-accent" />
@@ -312,7 +338,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Bar chart */}
         <div className="ad-chart-card">
           <h2 className="ad-section-title">
             <span className="ad-section-accent" />

@@ -1,0 +1,20 @@
+# Web framework
+flask==3.1.3
+flask-cors==6.0.2
+
+# Core ML / CV
+numpy
+opencv-python==4.13.0.92
+onnxruntime==1.17.3
+
+# Face recognition
+insightface==0.6.3
+
+# Gesture / liveness
+mediapipe==0.10.32
+
+# Utilities (used by insightface internally)
+requests
+scipy
+Pillow
+tqdm

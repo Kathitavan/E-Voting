@@ -692,3 +692,50 @@
 @media (max-width: 400px) {
   .ad-kpi-grid { grid-template-columns: 1fr; }
 }
+/* ── Add these lines to the bottom of your adminDashboard.css ── */
+
+/* Blockchain Explorer button in header */
+.ad-blockchain-btn {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 8px 16px; border-radius: 8px; cursor: pointer;
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.25);
+  color: #34d399;
+  transition: all .2s;
+}
+.ad-blockchain-btn:hover {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.45);
+}
+
+/* Blockchain summary strip between KPIs and results */
+.ad-chain-strip {
+  margin: 0 1.5rem 1.5rem;
+}
+.ad-chain-strip-inner {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-radius: 12px;
+  background: rgba(34,197,94,0.05);
+  border: 1px solid rgba(34,197,94,0.15);
+}
+.ad-chain-icon { font-size: 20px; }
+.ad-chain-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ad-chain-title {
+  font-size: 13px; font-weight: 600; color: #c8d8ec;
+}
+.ad-chain-sub {
+  font-size: 11px; color: #4a6480;
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.5px;
+}
+.ad-chain-view-btn {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+  padding: 7px 16px; border-radius: 7px; cursor: pointer;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  color: #34d399; transition: all .2s; white-space: nowrap;
+}
+.ad-chain-view-btn:hover {
+  background: rgba(34,197,94,0.18);
+  border-color: rgba(34,197,94,0.5);
+}

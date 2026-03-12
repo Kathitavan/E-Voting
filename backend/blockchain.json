@@ -1,0 +1,32 @@
+[
+  {
+    "index": 0,
+    "timestamp": "2026-03-12T09:37:34.108991+00:00",
+    "data": {
+      "voter": "GENESIS",
+      "candidate": "GENESIS"
+    },
+    "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "hash": "0830d6e115b2fb16948f4314161f446f568412efb39152e8b6d0fd0432862c00"
+  },
+  {
+    "index": 1,
+    "timestamp": "2026-03-12T10:09:24.004888+00:00",
+    "data": {
+      "voter": "anon:34d8b2c9be3b0e46fbba",
+      "candidate": "TVK"
+    },
+    "previous_hash": "0830d6e115b2fb16948f4314161f446f568412efb39152e8b6d0fd0432862c00",
+    "hash": "361d6a15be634991222a162c9c751ce3100fd20fe5e2c5659e0266704acc9394"
+  },
+  {
+    "index": 2,
+    "timestamp": "2026-03-12T10:43:52.793976+00:00",
+    "data": {
+      "voter": "anon:34d8b2c9be3b0e46fbba",
+      "candidate": "TVK"
+    },
+    "previous_hash": "361d6a15be634991222a162c9c751ce3100fd20fe5e2c5659e0266704acc9394",
+    "hash": "dad114a51b9c9dabe391ec85af732e92e3fde7f9a637bc54f4e6231f3f0e008d"
+  }
+]
