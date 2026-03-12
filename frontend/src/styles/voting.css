@@ -420,3 +420,107 @@
   .vp-name     { font-size: 11px; }
   .vp-serial   { display: none; }
 }
+
+/* ── ADD TO BOTTOM OF voting.css ── */
+
+/* Logo fallback when image is missing */
+.vp-logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+}
+
+/* Make party short name bigger and brighter */
+.vp-short {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.5px;
+}
+.vp-row--sel .vp-short {
+  color: #FF9933 !important;
+}
+
+/* Make full party name more readable */
+.vp-name {
+  font-size: 13px !important;
+  color: rgba(255,255,255,0.82) !important;
+  line-height: 1.4;
+}
+
+/* Tamil name more visible */
+.vp-tamil {
+  font-size: 13px !important;
+  color: rgba(255,255,255,0.55) !important;
+}
+
+/* Make logo box bigger */
+.vp-logo-wrap {
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  padding: 6px !important;
+  background: rgba(255,255,255,0.08) !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.vp-logo {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* ── ADD TO BOTTOM OF accessibleVoting.css ── */
+
+/* Logo fallback for accessible page */
+.av-logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fix logo inside card — target the img inside .av-card-logo div */
+.av-card-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Fix logo inside dialog */
+.av-dlg-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Bigger clearer short name in card */
+.av-card-short {
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.3px;
+}
+.av-card-name {
+  font-size: 13px !important;
+  color: rgba(240, 244, 248, 0.75) !important;
+  white-space: normal !important;
+  line-height: 1.4;
+}
+.av-card-tamil {
+  font-size: 13px !important;
+  color: rgba(240, 244, 248, 0.4) !important;
+}
+.av-card--sel .av-card-name {
+  color: rgba(240, 244, 248, 0.88) !important;
+}

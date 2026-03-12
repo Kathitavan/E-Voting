@@ -4,22 +4,36 @@ import "../styles/voting.css";
 import SystemLoader from "../components/SystemLoader";
 import { API } from "../config/api";
 
-
-// ── FIX BUG 6: vote endpoint needs a timeout — Render free can be slow
 const VOTE_TIMEOUT = 60000;
 
+// ── TVK is first ──
 const candidates = [
-  { name: "Dravida Munnetra Kazhagam",                tamil: "திராவிட முன்னேற்ற கழகம்",        short: "DMK",  logo: "/party-logos/dmk.png"      },
-  { name: "All India Anna Dravida Munnetra Kazhagam", tamil: "அண்ணா திராவிட முன்னேற்ற கழகம்",  short: "ADMK", logo: "/party-logos/admk.png"     },
-  { name: "Naam Tamilar Katchi",                      tamil: "நாம் தமிழர் கட்சி",              short: "NTK",  logo: "/party-logos/ntk.png"      },
-  { name: "Tamilaga Vettri Kazhagam",                 tamil: "தமிழக வெற்றி கழகம்",             short: "TVK",  logo: "/party-logos/tvk.png"      },
-  { name: "Bharatiya Janata Party",                   tamil: "பாரதிய ஜனதா கட்சி",              short: "BJP",  logo: "/party-logos/bjp.png"      },
-  { name: "Indian National Congress",                 tamil: "இந்திய தேசிய காங்கிரஸ்",         short: "INC",  logo: "/party-logos/congress.png" },
-  { name: "Pattali Makkal Katchi",                    tamil: "பாட்டாளி மக்கள் கட்சி",          short: "PMK",  logo: "/party-logos/pmk.png"      },
-  { name: "Amma Makkal Munnetra Kazhagam",            tamil: "அம்மா மக்கள் முன்னேற்ற கழகம்",   short: "AMMK", logo: "/party-logos/ammk.png"     },
-  { name: "Makkal Needhi Maiam",                      tamil: "மக்கள் நீதி மையம்",              short: "MNM",  logo: "/party-logos/mnm.png"      },
-  { name: "Desiya Murpokku Dravida Kazhagam",         tamil: "தேசிய முற்போக்கு திராவிட கழகம்", short: "DMDK", logo: "/party-logos/dmdk.png"     },
+  { name: "Tamilaga Vettri Kazhagam",                 tamil: "தமிழக வெற்றி கழகம்",             short: "TVK",  logo: "/party-logos/tvk.png",      emoji: "🌱" },
+  { name: "Dravida Munnetra Kazhagam",                tamil: "திராவிட முன்னேற்ற கழகம்",        short: "DMK",  logo: "/party-logos/dmk.png",      emoji: "🌅" },
+  { name: "All India Anna Dravida Munnetra Kazhagam", tamil: "அண்ணா திராவிட முன்னேற்ற கழகம்",  short: "ADMK", logo: "/party-logos/admk.png",     emoji: "🌊" },
+  { name: "Naam Tamilar Katchi",                      tamil: "நாம் தமிழர் கட்சி",              short: "NTK",  logo: "/party-logos/ntk.png",      emoji: "🔴" },
+  { name: "Bharatiya Janata Party",                   tamil: "பாரதிய ஜனதா கட்சி",              short: "BJP",  logo: "/party-logos/bjp.png",      emoji: "🪷" },
+  { name: "Indian National Congress",                 tamil: "இந்திய தேசிய காங்கிரஸ்",         short: "INC",  logo: "/party-logos/congress.png", emoji: "✋" },
+  { name: "Pattali Makkal Katchi",                    tamil: "பாட்டாளி மக்கள் கட்சி",          short: "PMK",  logo: "/party-logos/pmk.png",      emoji: "🌾" },
+  { name: "Amma Makkal Munnetra Kazhagam",            tamil: "அம்மா மக்கள் முன்னேற்ற கழகம்",   short: "AMMK", logo: "/party-logos/ammk.png",     emoji: "⭐" },
+  { name: "Makkal Needhi Maiam",                      tamil: "மக்கள் நீதி மையம்",              short: "MNM",  logo: "/party-logos/mnm.png",      emoji: "⚖️" },
+  { name: "Desiya Murpokku Dravida Kazhagam",         tamil: "தேசிய முற்போக்கு திராவிட கழகம்", short: "DMDK", logo: "/party-logos/dmdk.png",     emoji: "🎺" },
 ];
+
+function PartyLogo({ src, alt, emoji, className }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return <div className={`${className} vp-logo-fallback`}>{emoji}</div>;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export default function VotingPage({ user, setStep }) {
   const [selected, setSelected] = useState(null);
@@ -45,30 +59,16 @@ export default function VotingPage({ user, setStep }) {
     try {
       const res = await axios.post(
         `${API}/vote`,
-        {
-          qr_string: user.qr_string,
-          candidate: selected.short,
-        },
-        { timeout: VOTE_TIMEOUT }  // ── FIX BUG 6: was missing entirely
+        { qr_string: user.qr_string, candidate: selected.short },
+        { timeout: VOTE_TIMEOUT }
       );
-
       const status = res.data.status;
-
-      if (status === "vote_success") {
-        setStep("success");
-      } else if (status === "already_voted") {
-        showToast("You have already voted in this election", "warn");
-        setTimeout(() => setStep("qr"), 2500);
-      } else {
-        showToast("Vote could not be recorded — please try again");
-      }
+      if      (status === "vote_success")  setStep("success");
+      else if (status === "already_voted") { showToast("You have already voted", "warn"); setTimeout(() => setStep("qr"), 2500); }
+      else    showToast("Vote could not be recorded — please try again");
     } catch (err) {
-      // ── FIX: distinguish timeout from network error
-      if (err.code === "ECONNABORTED") {
-        showToast("Server is taking too long — please try again in a moment", "error");
-      } else {
-        showToast("Backend connection error");
-      }
+      if (err.code === "ECONNABORTED") showToast("Server timeout — please try again", "error");
+      else showToast("Backend connection error");
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export default function VotingPage({ user, setStep }) {
             </p>
             <div className="vp-dlg-party">
               <div className="vp-dlg-logo-wrap">
-                <img src={selected.logo} alt={selected.short} className="vp-dlg-logo"/>
+                <PartyLogo src={selected.logo} alt={selected.short} emoji={selected.emoji} className="vp-dlg-logo"/>
               </div>
               <div className="vp-dlg-pinfo">
                 <span className="vp-dlg-short">{selected.short}</span>
@@ -145,7 +145,7 @@ export default function VotingPage({ user, setStep }) {
                 >
                   <div className="vp-serial">{String(i + 1).padStart(2, "0")}</div>
                   <div className="vp-logo-wrap">
-                    <img src={c.logo} alt={c.short} className="vp-logo"/>
+                    <PartyLogo src={c.logo} alt={c.short} emoji={c.emoji} className="vp-logo"/>
                   </div>
                   <div className="vp-info">
                     <span className="vp-short">{c.short}</span>
@@ -180,7 +180,7 @@ export default function VotingPage({ user, setStep }) {
               <span className="vp-preview-lbl">YOUR SELECTION</span>
               {selected ? (
                 <div className="vp-preview-card">
-                  <img src={selected.logo} alt={selected.short} className="vp-preview-logo"/>
+                  <PartyLogo src={selected.logo} alt={selected.short} emoji={selected.emoji} className="vp-preview-logo"/>
                   <div>
                     <div className="vp-preview-short">{selected.short}</div>
                     <div className="vp-preview-name">{selected.name}</div>
@@ -208,7 +208,7 @@ export default function VotingPage({ user, setStep }) {
         <div className="vp-mobile-bar">
           {selected && (
             <div className="vp-mobile-sel">
-              <img src={selected.logo} alt={selected.short} className="vp-mobile-logo"/>
+              <PartyLogo src={selected.logo} alt={selected.short} emoji={selected.emoji} className="vp-mobile-logo"/>
               <span>{selected.short}</span>
             </div>
           )}
