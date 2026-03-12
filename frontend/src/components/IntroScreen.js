@@ -2,12 +2,16 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import "../styles/intro.css";
 
 const TEAM = [
-  { name: "Kathiravan", role: "Lead Developer",     img: "/team/member1.jpg" },
-  { name: "Member 2",  role: "Frontend Engineer",   img: "/team/member2.jpg" },
-  { name: "Member 3",  role: "Backend Engineer",    img: "/team/member3.jpg" },
-  { name: "Member 4",  role: "Security Specialist", img: "/team/member4.jpg" },
+  { name: "K KATHIRAVAN", role: "Founder & Lead Developer & System Architect & Full-Stack Developer",     img: "/team/member1.jpg" },
+  { name: "S KARTHIKEYAN", role: "Documentation & Research Lead", img: "/team/member2.jpg" },
+{ name: "R SATHISH", role: "Biometric Authentication Developer", img: "/team/member3.jpg" },
+{ name: "G KARTHICK", role: "Blockchain Integration Developer", img: "/team/member4.jpg" }
 ];
-const GUIDE = { name: "Guide Name", role: "Project Guide & Mentor", img: "/team/guide.jpg" };
+const GUIDE = {
+  name: "MRS. M. GEETHARANI, M.E., PH.D.",
+  role: "Head of Department (CSE) • Academic Supervisor • Project & Research Mentor",
+  img: "/team/guide.jpg"
+};
 
 const OVERVIEW = [
   { n:"01", icon:"🧬", title:"Biometric Auth",    body:"InsightFace 512-d embeddings with passive liveness detection. Defeats printed photos, screens, and every known spoofing vector in real time." },
@@ -186,7 +190,7 @@ export default function IntroScreen({ setShowIntro }) {
             <div className="is-eyebrow">NATIONAL ELECTION COMMISSION</div>
             <h1 className="is-main-title">
               <span className="is-mt-line" style={{animationDelay:".05s"}}>SECURE</span>
-              <span className="is-mt-line is-mt-violet" style={{animationDelay:".18s"}}>BIOMETRIC</span>
+              <span className="is-mt-line is-mt-violet" style={{animationDelay:".18s"}}>BIOMETRIC BLOCKCHAIN</span>
               <span className="is-mt-line" style={{animationDelay:".31s"}}>E-VOTING</span>
             </h1>
             <div className="is-title-rule"/>
